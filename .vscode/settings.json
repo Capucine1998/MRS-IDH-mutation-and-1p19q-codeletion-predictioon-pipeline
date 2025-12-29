@@ -1,9 +1,9 @@
 {
     "python.analysis.extraPaths": [
-        "./glioma-mrs-preprocessing/processing/python",
-        "./glioma-mrs-preprocessing/read_raw_MRS/python",
-        "./glioma-mrs-preprocessing/visualization/python",
-        "./glioma-mrs-preprocessing/fitting/LCModel/python",
-        "./glioma-mrs-preprocessing/utils"
+        "./glioma_mrs_preprocessing/processing/python",
+        "./glioma_mrs_preprocessing/read_raw_MRS/python",
+        "./glioma_mrs_preprocessing/visualization/python",
+        "./glioma_mrs_preprocessing/fitting/LCModel/python",
+        "./glioma_mrs_preprocessing/utils"
     ]
 }

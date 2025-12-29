@@ -19,11 +19,11 @@ The IDH MRS Classifier is a comprehensive tool designed for the analysis and cla
 
 ## File and Folder Structure
 - **app.py**: Flask backend for the web interface.
-- **glioma-mrs-preprocessing/**: Contains scripts for MRS data preprocessing.
+- **glioma_mrs_preprocessing/**: Contains scripts for MRS data preprocessing.
   - **MRS_process.py**: Main preprocessing script.
   - **utils/**: Utility scripts for data handling and processing.
   - **visualization/**: Scripts for generating plots and visualizations.
-- **mrs-idh-1p19q-classifier/**: Machine learning models and utilities.
+- **mrs_idh_1p19q_classifier/**: Machine learning models and utilities.
   - **Classifier.py**: Main classification script.
   - **models/**: Pre-trained model files.
 - **static/**: Frontend assets (HTML, CSS, JavaScript).
@@ -65,11 +65,11 @@ The IDH MRS Classifier is a comprehensive tool designed for the analysis and cla
 ### Command-Line Tools
 - **Preprocessing**:
   ```bash
-  python glioma-mrs-preprocessing/MRS_process.py <input-folder>
+  python glioma_mrs_preprocessing/MRS_process.py <input-folder>
   ```
 - **Classification**:
   ```bash
-  python mrs-idh-1p19q-classifier/Classifier.py <input-data>
+  python mrs_idh_1p19q_classifier/Classifier.py <input-data>
   ```
 
 ## Dependencies
@@ -119,4 +119,4 @@ This project was supported by the Agence Nationale de la Recherche [ANR-20-CE17-
 2. **Can I use this tool without LCModel?**
    - No, LCModel is required for MRS quantification.
 3. **How do I add new machine learning models?**
-   - Add the model file to `mrs-idh-1p19q-classifier/models/` and update `Classifier.py` to include the new model.
+   - Add the model file to `mrs_idh_1p19q_classifier/models/` and update `Classifier.py` to include the new model.

@@ -32,127 +32,16 @@ def sanitize_path(path):
     base_path = "/home/mouette/websites/idh-mrs-classifier/"
     return path.replace(base_path, '')
 
-# @app.route('/run-processing', methods=['POST'])
-# def run_processing():
-#     try:
-#         print("\n=== Starting Processing ===")
-#         dcm_files = request.files.getlist('dcmFiles')
-#         water_dcm_files = request.files.getlist('waterDcmFiles')
-
-#         temp_dir = '/home/mouette/websites/idh-mrs-classifier/temp_uploads'
-#         os.makedirs(temp_dir, exist_ok=True)
-
-#         dcm_paths = []
-#         for file in dcm_files:
-#             filename = secure_filename(file.filename)
-#             file_path = os.path.join(temp_dir, filename)
-#             file.save(file_path)
-#             dcm_paths.append(file_path)
-
-#         water_dcm_paths = []
-#         for file in water_dcm_files:
-#             filename = secure_filename(file.filename)
-#             file_path = os.path.join(temp_dir, filename)
-#             file.save(file_path)
-#             water_dcm_paths.append(file_path)
-
-        
-#         print(f"Current working directory: {os.getcwd()}")
-#         print(f"Script directory: {os.path.dirname(__file__)}")
-#         print(f"Looking for PDFs in: {pdf_dirs}")
-        
-#         result = subprocess.run(
-#             ['python', 'glioma-mrs-preprocessing/MRS_process.py', ' '.join(dcm_paths), ' '.join(water_dcm_paths)],
-#             capture_output=True, text=True,
-#             cwd=os.path.dirname(__file__),
-#             timeout=300
-#         )
-
-#         pdf_dirs = [
-#             'glioma-mrs-preprocessing/fitting/LCModel/output/mega_diff',
-#             'glioma-mrs-preprocessing/fitting/LCModel/output/mega_off',
-#             'glioma-mrs-preprocessing/fitting/LCModel/output/press',
-#             'glioma-mrs-preprocessing/fitting/LCModel/output/steam'
-#         ]
-
-#         pdf_files = []
-#         base_search_path = os.path.join(os.path.dirname(__file__), 'glioma-mrs-preprocessing/fitting/LCModel/output')
-#         print(f"Base search path: {base_search_path}")
-
-#         for root, dirs, files in os.walk(base_search_path):
-#             print(f"Scanning: {root}")
-#             for file in files:
-#                 if file.endswith('.pdf'):
-#                     rel_path = os.path.relpath(os.path.join(root, file), base_search_path)
-#                     print(f"Found PDF: {rel_path}")
-#                     pdf_files.append(rel_path)
-
-#         if not pdf_files:
-#             print("No PDFs found. Directory contents:")
-#             for root, dirs, files in os.walk(base_search_path):
-#                 print(f"{root}: {files}")
-
-#         lcmodel_files = []
-#         for d in pdf_dirs:
-#             full_dir = os.path.join(os.path.dirname(__file__), d)
-#             if os.path.exists(full_dir):
-#                 for ext in ['*.COORD', '*.PRINT']:
-#                     for f in glob.glob(os.path.join(full_dir, ext)):
-#                         rel_path = os.path.relpath(f, os.path.join(os.path.dirname(__file__), 'glioma-mrs-preprocessing/fitting/LCModel/output'))
-#                         lcmodel_files.append(rel_path)
-
-#         # Include report if it exists
-#         report_dir = os.path.join(os.path.dirname(__file__), 'glioma-mrs-preprocessing', 'results', 'report')
-#         report_files = []
-#         report_main_html = None
-
-#         if os.path.exists(report_dir):
-#             for f in os.listdir(report_dir):
-#                 if f.endswith('.html') or f.endswith('.png'):
-#                     report_files.append(f)
-#                     if not report_main_html and f.lower().endswith('.html'):
-#                         report_main_html = f"glioma-mrs-preprocessing/results/report/{f}"  # relative path
-        
-        
-#         try:
-#             for file_path in dcm_paths + water_dcm_paths:
-#                 if os.path.exists(file_path):
-#                     os.remove(file_path)
-#             print("Cleaned up temporary files")
-#         except Exception as e:
-#             print(f"Warning: Failed to clean up temp files: {e}")
-            
-            
-#         return jsonify({
-#             'status': 'success',
-#             'output': result.stdout,
-#             'logs': result.stdout + result.stderr,
-#             'pdfs': pdf_files,
-#             'lcmodel_files': lcmodel_files,
-#             'report': report_main_html,         # ✅ main HTML report for iframe
-#             'report_files': report_files        # ✅ list of all downloadable files
-#         })
-        
-
-#     except Exception as e:
-#         print(f"\n!!! Pipeline failed: {str(e)}")
-#         print(traceback.format_exc())
-#         return jsonify({
-#             'status': 'error',
-#             'message': str(e)
-#         }), 500
-
-
 @app.route('/run-processing', methods=['POST'])
 def run_processing():
     # Initialize all variables at the start
     pdf_dirs = [
-        'glioma-mrs-preprocessing/fitting/LCModel/output/mega_diff',
-        'glioma-mrs-preprocessing/fitting/LCModel/output/mega_off',
-        'glioma-mrs-preprocessing/fitting/LCModel/output/press',
-        'glioma-mrs-preprocessing/fitting/LCModel/output/steam'
+        'glioma_mrs_preprocessing/fitting/LCModel/output/mega_diff',
+        'glioma_mrs_preprocessing/fitting/LCModel/output/mega_off',
+        'glioma_mrs_preprocessing/fitting/LCModel/output/press',
+        'glioma_mrs_preprocessing/fitting/LCModel/output/steam'
     ]
-    report_dir = os.path.join(os.path.dirname(__file__), 'glioma-mrs-preprocessing', 'results', 'report')
+    report_dir = os.path.join(os.path.dirname(__file__), 'glioma_mrs_preprocessing', 'results', 'report')
     
     dcm_paths = []
     water_dcm_paths = []
@@ -187,10 +76,14 @@ def run_processing():
             file_path = os.path.join(temp_dir, filename)
             file.save(file_path)
             water_dcm_paths.append(file_path)
+        
+        # date = time.strftime("%Y%m%d-%H%M%S")
+        # logfile = os.path.join(os.getcwd(), "logs", "processing_log_" + date + ".txt")
+        # print(f"Log file will be saved to: {logfile}")
 
         # Run processing
-        cmd = ['python', 'glioma-mrs-preprocessing/MRS_process.py', ' '.join(dcm_paths), ' '.join(water_dcm_paths)]
-        # print(f"\nExecuting command: {' '.join(cmd)}")
+        cmd = ['python', 'glioma_mrs_preprocessing/MRS_process.py', ' '.join(dcm_paths), ' '.join(water_dcm_paths)]
+        print(f"\nExecuting command: {' '.join(cmd)}")
         
         result = subprocess.run(
             cmd,
@@ -212,7 +105,7 @@ def run_processing():
         report_files = []
         report_main_html = None
         
-        output_base = os.path.join(os.path.dirname(__file__), 'glioma-mrs-preprocessing/fitting/LCModel/output')
+        output_base = os.path.join(os.path.dirname(__file__), 'glioma_mrs_preprocessing/fitting/LCModel/output')
         # Check for output files
         if os.path.exists(output_base):
             for d in pdf_dirs:
@@ -228,7 +121,7 @@ def run_processing():
                 if f.endswith(('.html', '.png')):
                     report_files.append(f)
                     if not report_main_html and f.lower().endswith('.html'):
-                        report_main_html = f"glioma-mrs-preprocessing/results/report/{f}"
+                        report_main_html = f"glioma_mrs_preprocessing/results/report/{f}"
 
         # 3. Prepare response - maintain both PDF and report outputs
         response_data = {
@@ -283,7 +176,7 @@ def run_classifier():
         }
 
         file_paths = {}
-        args = ['python3', 'mrs-idh-1p19q-classifier/Classifier.py', user_folder]
+        args = ['python3', 'mrs_idh_1p19q_classifier/Classifier.py', user_folder]
 
         for field_name, subdir in fields.items():
             uploaded_files = request.files.getlist(field_name)
@@ -344,7 +237,7 @@ def run_classifier():
 @app.route('/lcmodel-files/<path:filename>')
 def serve_lcmodel_files(filename):
     # This will serve files from fitting/LCModel/output/ and its subfolders
-    lcmodel_root = os.path.join(os.path.dirname(__file__), 'glioma-mrs-preprocessing/fitting/LCModel/output')
+    lcmodel_root = os.path.join(os.path.dirname(__file__), 'glioma_mrs_preprocessing/fitting/LCModel/output')
     return send_from_directory(lcmodel_root, filename)
 
 @app.route('/run-second-classifier', methods=['POST'])
@@ -404,7 +297,7 @@ def run_second_classifier():
 
         # Run the classifier only if we have IDH mutant cases
         result = subprocess.run(
-            ['python3', 'mrs-idh-1p19q-classifier/1p_19q_Classifier.py', full_user_folder],
+            ['python3', 'mrs_idh_1p19q_classifier/1p_19q_Classifier.py', full_user_folder],
             capture_output=True,
             text=True
         )
@@ -497,19 +390,19 @@ def serve_user_files(filename):
 @app.route('/pdfs/<path:filename>')
 def serve_pdf(filename):
     # This will serve files from fitting/LCModel/output/ and its subfolders
-    pdf_root = os.path.join(os.path.dirname(__file__), 'glioma-mrs-preprocessing/fitting/LCModel/output')
+    pdf_root = os.path.join(os.path.dirname(__file__), 'glioma_mrs_preprocessing/fitting/LCModel/output')
     return send_from_directory(pdf_root, filename)
 
 @app.route('/report/<path:filename>')
 def serve_report(filename):
     # This will serve files from fitting/LCModel/output/ and its subfolders
-    report_root = os.path.join(os.path.dirname(__file__), 'glioma-mrs-preprocessing/results/report')
+    report_root = os.path.join(os.path.dirname(__file__), 'glioma_mrs_preprocessing/results/report')
     return send_from_directory(report_root, filename)
 
 
 @app.route('/download-mega/<category>')
 def download_mega_category(category):
-    base_dir = os.path.join("glioma-mrs-preprocessing", "fitting", "LCModel", "output", category)
+    base_dir = os.path.join("glioma_mrs_preprocessing", "fitting", "LCModel", "output", category)
 
     if not os.path.exists(base_dir):
         return abort(404, description="Category folder not found")
@@ -539,49 +432,6 @@ def serve_plot(user_folder, plot_name):
     plot_path = os.path.join(plot_dir, plot_name)
     print(f"Serving plot: {plot_path}")  # Debugging line
     return send_from_directory(plot_dir, plot_name)
-
-# @app.route('/analysis-plots', methods=['POST'])
-# def get_plots():
-#     user_folder = request.json.get('user_folder')
-#     print("Received user_folder:", user_folder)  # Debugging line
-
-#     if not user_folder:
-#         return jsonify({"error": "user_folder not provided"}), 400
-
-#     user_folder_path = os.path.join(app.config['UPLOAD_FOLDER'], user_folder)
-#     print("User folder path:", user_folder_path)  # Debugging line
-
-#     if not os.path.exists(user_folder_path):
-#         return jsonify({"error": "User folder not found"}), 404
-
-#     # Check for the existence of the specific plot files
-#     concentration_plot = os.path.join(user_folder_path, "plots", "concentration_plot.html")
-#     ratio_plot = os.path.join(user_folder_path, "plots", "ratio_plot.html")
-#     heatmap_plot = os.path.join(user_folder_path, "plots", "heatmap_plot.html")
-#     spectra_plot = os.path.join(user_folder_path, "plots", "spectra_plot.html")
-
-#     # Verify if the plot files exist
-#     plots_exist = {
-#         "concentration_plot": os.path.exists(concentration_plot),
-#         "ratio_plot": os.path.exists(ratio_plot),
-#         "heatmap_plot": os.path.exists(heatmap_plot),
-#         "spectra_plot": os.path.exists(spectra_plot)
-#     }
-#     print("Plots exist:", plots_exist)  # Debugging line
-
-#     if not any(plots_exist.values()):
-#         return jsonify({"error": "No plots found for the given user folder"}), 404
-
-#     # Otherwise, return the URLs of the existing plots
-#     return jsonify({
-#         "status": "success",
-#         "plots": {
-#             "concentration_plot": f"/plots/{os.path.basename(user_folder)}/concentration_plot.html",
-#             "ratio_plot": f"/plots/{os.path.basename(user_folder)}/ratio_plot.html",
-#             "heatmap_plot": f"/plots/{os.path.basename(user_folder)}/heatmap_plot.html",
-#             "spectra_plot": f"/plots/{os.path.basename(user_folder)}/spectra_plot.html"
-#         }
-#     }), 200
      
 @app.route('/analysis-plots', methods=['POST'])
 def get_plots():

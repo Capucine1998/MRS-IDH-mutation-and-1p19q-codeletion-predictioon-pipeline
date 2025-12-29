@@ -190,7 +190,7 @@ def run_processing():
 
         # Run processing
         cmd = ['python', 'glioma-mrs-preprocessing/MRS_process.py', ' '.join(dcm_paths), ' '.join(water_dcm_paths)]
-        print(f"\nExecuting command: {' '.join(cmd)}")
+        # print(f"\nExecuting command: {' '.join(cmd)}")
         
         result = subprocess.run(
             cmd,

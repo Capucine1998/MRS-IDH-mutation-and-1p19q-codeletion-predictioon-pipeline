@@ -1,7 +1,7 @@
-[submodule "glioma-mrs-preprocessing"]
-	path = glioma-mrs-preprocessing
+[submodule "glioma_mrs_preprocessing"]
+	path = glioma_mrs_preprocessing
 	url = git@github.com:Capucine1998/mrs-idh-1p19q-classifier.git
 
-[submodule "mrs-idh-1p19q-classifier"]
-	path = mrs-idh-1p19q-classifier
+[submodule "mrs_idh_1p19q_classifier"]
+	path = mrs_idh_1p19q_classifier
 	url = git@github.com:Capucine1998/mrs-idh-1p19q-classifier.git

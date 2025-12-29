@@ -62,21 +62,21 @@ def sanitize_path(path):
 #         print(f"Looking for PDFs in: {pdf_dirs}")
         
 #         result = subprocess.run(
-#             ['python', 'preprocessing/MRS_process.py', ' '.join(dcm_paths), ' '.join(water_dcm_paths)],
+#             ['python', 'glioma-mrs-preprocessing/MRS_process.py', ' '.join(dcm_paths), ' '.join(water_dcm_paths)],
 #             capture_output=True, text=True,
 #             cwd=os.path.dirname(__file__),
 #             timeout=300
 #         )
 
 #         pdf_dirs = [
-#             'preprocessing/fitting/LCModel/output/mega_diff',
-#             'preprocessing/fitting/LCModel/output/mega_off',
-#             'preprocessing/fitting/LCModel/output/press',
-#             'preprocessing/fitting/LCModel/output/steam'
+#             'glioma-mrs-preprocessing/fitting/LCModel/output/mega_diff',
+#             'glioma-mrs-preprocessing/fitting/LCModel/output/mega_off',
+#             'glioma-mrs-preprocessing/fitting/LCModel/output/press',
+#             'glioma-mrs-preprocessing/fitting/LCModel/output/steam'
 #         ]
 
 #         pdf_files = []
-#         base_search_path = os.path.join(os.path.dirname(__file__), 'preprocessing/fitting/LCModel/output')
+#         base_search_path = os.path.join(os.path.dirname(__file__), 'glioma-mrs-preprocessing/fitting/LCModel/output')
 #         print(f"Base search path: {base_search_path}")
 
 #         for root, dirs, files in os.walk(base_search_path):
@@ -98,11 +98,11 @@ def sanitize_path(path):
 #             if os.path.exists(full_dir):
 #                 for ext in ['*.COORD', '*.PRINT']:
 #                     for f in glob.glob(os.path.join(full_dir, ext)):
-#                         rel_path = os.path.relpath(f, os.path.join(os.path.dirname(__file__), 'preprocessing/fitting/LCModel/output'))
+#                         rel_path = os.path.relpath(f, os.path.join(os.path.dirname(__file__), 'glioma-mrs-preprocessing/fitting/LCModel/output'))
 #                         lcmodel_files.append(rel_path)
 
 #         # Include report if it exists
-#         report_dir = os.path.join(os.path.dirname(__file__), 'preprocessing', 'results', 'report')
+#         report_dir = os.path.join(os.path.dirname(__file__), 'glioma-mrs-preprocessing', 'results', 'report')
 #         report_files = []
 #         report_main_html = None
 
@@ -111,7 +111,7 @@ def sanitize_path(path):
 #                 if f.endswith('.html') or f.endswith('.png'):
 #                     report_files.append(f)
 #                     if not report_main_html and f.lower().endswith('.html'):
-#                         report_main_html = f"preprocessing/results/report/{f}"  # relative path
+#                         report_main_html = f"glioma-mrs-preprocessing/results/report/{f}"  # relative path
         
         
 #         try:
@@ -147,12 +147,12 @@ def sanitize_path(path):
 def run_processing():
     # Initialize all variables at the start
     pdf_dirs = [
-        'preprocessing/fitting/LCModel/output/mega_diff',
-        'preprocessing/fitting/LCModel/output/mega_off',
-        'preprocessing/fitting/LCModel/output/press',
-        'preprocessing/fitting/LCModel/output/steam'
+        'glioma-mrs-preprocessing/fitting/LCModel/output/mega_diff',
+        'glioma-mrs-preprocessing/fitting/LCModel/output/mega_off',
+        'glioma-mrs-preprocessing/fitting/LCModel/output/press',
+        'glioma-mrs-preprocessing/fitting/LCModel/output/steam'
     ]
-    report_dir = os.path.join(os.path.dirname(__file__), 'preprocessing', 'results', 'report')
+    report_dir = os.path.join(os.path.dirname(__file__), 'glioma-mrs-preprocessing', 'results', 'report')
     
     dcm_paths = []
     water_dcm_paths = []
@@ -189,7 +189,7 @@ def run_processing():
             water_dcm_paths.append(file_path)
 
         # Run processing
-        cmd = ['python', 'preprocessing/MRS_process.py', ' '.join(dcm_paths), ' '.join(water_dcm_paths)]
+        cmd = ['python', 'glioma-mrs-preprocessing/MRS_process.py', ' '.join(dcm_paths), ' '.join(water_dcm_paths)]
         print(f"\nExecuting command: {' '.join(cmd)}")
         
         result = subprocess.run(
@@ -212,7 +212,7 @@ def run_processing():
         report_files = []
         report_main_html = None
         
-        output_base = os.path.join(os.path.dirname(__file__), 'preprocessing/fitting/LCModel/output')
+        output_base = os.path.join(os.path.dirname(__file__), 'glioma-mrs-preprocessing/fitting/LCModel/output')
         # Check for output files
         if os.path.exists(output_base):
             for d in pdf_dirs:
@@ -228,7 +228,7 @@ def run_processing():
                 if f.endswith(('.html', '.png')):
                     report_files.append(f)
                     if not report_main_html and f.lower().endswith('.html'):
-                        report_main_html = f"preprocessing/results/report/{f}"
+                        report_main_html = f"glioma-mrs-preprocessing/results/report/{f}"
 
         # 3. Prepare response - maintain both PDF and report outputs
         response_data = {
@@ -283,7 +283,7 @@ def run_classifier():
         }
 
         file_paths = {}
-        args = ['python3', 'IDH_classifier/Classifier.py', user_folder]
+        args = ['python3', 'mrs-idh-1p19q-classifier/Classifier.py', user_folder]
 
         for field_name, subdir in fields.items():
             uploaded_files = request.files.getlist(field_name)
@@ -344,7 +344,7 @@ def run_classifier():
 @app.route('/lcmodel-files/<path:filename>')
 def serve_lcmodel_files(filename):
     # This will serve files from fitting/LCModel/output/ and its subfolders
-    lcmodel_root = os.path.join(os.path.dirname(__file__), 'preprocessing/fitting/LCModel/output')
+    lcmodel_root = os.path.join(os.path.dirname(__file__), 'glioma-mrs-preprocessing/fitting/LCModel/output')
     return send_from_directory(lcmodel_root, filename)
 
 @app.route('/run-second-classifier', methods=['POST'])
@@ -404,7 +404,7 @@ def run_second_classifier():
 
         # Run the classifier only if we have IDH mutant cases
         result = subprocess.run(
-            ['python3', 'IDH_classifier/1p_19q_Classifier.py', full_user_folder],
+            ['python3', 'mrs-idh-1p19q-classifier/1p_19q_Classifier.py', full_user_folder],
             capture_output=True,
             text=True
         )
@@ -497,19 +497,19 @@ def serve_user_files(filename):
 @app.route('/pdfs/<path:filename>')
 def serve_pdf(filename):
     # This will serve files from fitting/LCModel/output/ and its subfolders
-    pdf_root = os.path.join(os.path.dirname(__file__), 'preprocessing/fitting/LCModel/output')
+    pdf_root = os.path.join(os.path.dirname(__file__), 'glioma-mrs-preprocessing/fitting/LCModel/output')
     return send_from_directory(pdf_root, filename)
 
 @app.route('/report/<path:filename>')
 def serve_report(filename):
     # This will serve files from fitting/LCModel/output/ and its subfolders
-    report_root = os.path.join(os.path.dirname(__file__), 'preprocessing/results/report')
+    report_root = os.path.join(os.path.dirname(__file__), 'glioma-mrs-preprocessing/results/report')
     return send_from_directory(report_root, filename)
 
 
 @app.route('/download-mega/<category>')
 def download_mega_category(category):
-    base_dir = os.path.join("preprocessing", "fitting", "LCModel", "output", category)
+    base_dir = os.path.join("glioma-mrs-preprocessing", "fitting", "LCModel", "output", category)
 
     if not os.path.exists(base_dir):
         return abort(404, description="Category folder not found")

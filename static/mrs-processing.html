@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IDH MRS Classifier</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+
+<body>
+    <header>
+        <div class="header-container">
+            <img src="./img/paris_institute_of_brain_logo.png" alt="Paris Brain Institute Logo" class="logo">
+            <div class="title-container">
+                <h1>IDH MRS Classifier</h1>
+            </div>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="/static/mrs-processing.html" class="nav-button pressed">MRS Processing</a></li>
+                <li><a href="/static/classifier.html" class="nav-button unpressed">Classifier</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="toggle-switch">
+                <button id="multiBtn" class="active">MULTI PATIENT (Folder)</button>
+                <button id="monoBtn">MONO (Files)</button>
+            </div>
+
+            <div class="form_fake">
+                <div id="multiForm" class="form-group">
+                    <label for="directory">Path to directory:</label>
+                    <input type="file" id="directory" webkitdirectory directory>
+                </div>
+
+                <div id="monoForm" class="form-group" style="display: none;">
+                    <label for="dcmFile">Import .dcm files or directory:</label>
+                    <input type="file" id="dcmFile" accept=".dcm" multiple webkitdirectory directory>
+                    <label for="waterDcmFile">Import water .dcm files (optional):</label>
+                    <input type="file" id="waterDcmFile" accept=".dcm" multiple webkitdirectory directory>
+
+                </div>
+
+                <div class="options">
+                    <div class="group">
+                        <h2>MRS DATA</h2>
+                        <button class="radio-btn" data-group="mrs-data">PRESS</button>
+                        <button class="radio-btn" data-group="mrs-data">MEGA-PRESS</button>
+                        <button class="radio-btn" data-group="mrs-data">STEAM</button>
+                    </div>
+
+                    <div class="group">
+                        <h2>PATIENT CONDITION</h2>
+                        <button class="radio-btn" data-group="condition">HEALTHY</button>
+                        <button class="radio-btn" data-group="condition">TUMORAL</button>
+                        <button class="radio-btn" data-group="condition">PAIRED HEALTHY & TUMORAL</button>
+                    </div>
+
+                    <div class="group">
+                        <h2>ANATOMICAL IMAGES (Optional)</h2>
+                        <button class="checkbox-btn" data-group="anatomical" data-type="T1">T1</button>
+                        <input type="file" id="T1Input" accept=".dcm,.nii" multiple webkitdirectory directory
+                            style="display: none;">
+                        <button class="checkbox-btn" data-group="anatomical" data-type="T2-FLAIR">T2-FLAIR</button>
+                        <input type="file" id="T2FLAIRInput" accept=".dcm,.nii" multiple webkitdirectory
+                            directory style="display: none;">
+                        <button class="checkbox-btn" data-group="anatomical" data-type="DIFFUSION MRI">DIFFUSION
+                            MRI</button>
+                        <input type="file" id="DiffusionMRIInput" accept=".dcm,.nii" multiple webkitdirectory
+                            directory style="display: none;">
+                        <button class="checkbox-btn" data-group="anatomical" data-type="APT">APT</button>
+                        <input type="file" id="APTInput" accept=".dcm,.nii" multiple webkitdirectory directory
+                            style="display: none;">
+                    </div>
+                </div>
+
+                <button id="runBtn" class="run_button" disabled>RUN PROCESSING</button>
+            </div>
+
+            <!-- Displaying Results -->
+            <div id="results" style="margin-top: 20px;">
+                <pre id="output"></pre>
+                <div id="pdf-container" style="margin-top: 20px;"></div>
+                <div id="report-container" style="margin-top: 40px;"></div>
+                <!-- <img src="{{ patient_report['PNG (Base64)'] }}"> -->
+
+            </div>
+
+
+            <!-- Ask user for classifier -->
+            <div id="classifier-prompt" style="margin: 20px 0;"></div>
+
+            <div id="report-list"></div>
+
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2025 Paris Brain Institute. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/static/mrs-processing.js"></script>
+    <script src="/static/utils.js"></script>
+</body>
+
+</html>

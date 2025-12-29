@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Classifier</title>
+    <link rel="stylesheet" href="/static/styles.css">
+    <script src="/static/classifier.js"></script>
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <img src="/static/img/paris_institute_of_brain_logo.png" alt="Logo" class="logo">
+            <div class="title-container">
+                <h1>IDH MRS Classifier</h1>
+            </div>
+        </div>
+        <nav>
+            <ul>
+                <li><a href="/static/mrs-processing.html" class="nav-button unpressed">MRS Processing</a></li>
+                <li><a href="/static/classifier.html" class="nav-button pressed">Classifier</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        <!-- Hidden button for auto-triggering classifier -->
+        <button id="auto-trigger-classifier" style="display:none" onclick="runPythonScript(new Event('submit'))">Auto Trigger</button>
+
+        <div id="classifier" class="section">
+            <div class="container">
+                <form id="classifierForm" onsubmit="runPythonScript(event)">
+                    <div class="form-group">
+                        <label for="fileInputCoordOff">MEGA_OFF .COORD files:</label>
+                        <input type="file" id="fileInputCoordOff" name="fileInputCoordOff" multiple required>
+                    </div>
+                    <div class="form-group">
+                        <label for="fileInputPrintOff">MEGA_OFF .PRINT files:</label>
+                        <input type="file" id="fileInputPrintOff" name="fileInputPrintOff" multiple required>
+                    </div>
+                    <div class="form-group">
+                        <label for="fileInputCoordDiff">MEGA_DIFF .COORD files:</label>
+                        <input type="file" id="fileInputCoordDiff" name="fileInputCoordDiff" multiple>
+                    </div>
+                    <div class="form-group">
+                        <label for="fileInputPrintDiff">MEGA_DIFF .PRINT files:</label>
+                        <input type="file" id="fileInputPrintDiff" name="fileInputPrintDiff" multiple>
+                    </div>
+                    <div class="form-group">
+                        <input type="checkbox" id="showResultCheckbox" name="showResultCheckbox">
+                        <label for="showResultCheckbox">Show Output Logs</label>
+                    </div>
+                    <button type="submit">Launch Prediction</button>
+                </form>
+
+
+                <!-- SD Metabolite Plot -->
+                <div id="sd-container" style="display: none; margin-top: 2em;">
+                    <h2>Standard Deviation (SD) Metabolites</h2>
+                </div>
+
+                <!-- Metabolite Analysis Plot -->
+                <div id="analysis-container" style="display: none; margin-top: 2em;">
+                    <h2>Metabolite Analysis Board</h2>
+                    <div class="plot-box">
+                        <h3>MEGAPRESS Metabolite Analysis</h3>
+                        <iframe class="plot-frame"></iframe>
+                    </div>
+                </div>
+                
+                <p id="result"></p>
+                <!-- IDH Status Predictions -->
+                <div id="predictions-section-idh" style="display: none;">
+                    <h2>IDH Status Predictions</h2>
+                    <table id="predictions-table-idh">
+                        <thead>
+                            <tr id="predictions-header-idh"></tr>
+                        </thead>
+                        <tbody id="predictions-body-idh"></tbody>
+                    </table>
+                </div>
+                
+                <!-- SHAP Explanation Plots -->
+                <div id="shap-explanation-idh" style="display: none; margin-top: 2em;">
+                    <h2> IDH Status Classifier SHAP Explanation</h2>
+
+                    <div class="shap-plot-row">
+                        <div class="plot-box">
+                            <h3>SHAP Bar Plot</h3>
+                            <img id="shap_IDH_bar-image" alt="IDH SHAP Bar" class="plot-img">
+                            <button id="download-shap_IDH_bar-button">Download</button>
+                        </div>
+                        <div class="plot-box">
+                            <h3>SHAP Beeswarm Plot</h3>
+                            <img id="shap_IDH_beeswarm-image" alt="IDH SHAP Beeswarm" class="plot-img">
+                            <button id="download-shap_IDH_beeswarm-button">Download</button>
+                        </div>
+                    </div>
+                </div>
+
+
+                <!-- 1p/19q Codeletion Predictions -->
+                <div id="predictions-section-1p19q" style="display: none;">
+                    <h2>1p/19q Codeletion Predictions</h2>
+                    <table id="predictions-table-1p19q">
+                        <thead>
+                            <tr id="predictions-header-1p19q"></tr>
+                        </thead>
+                        <tbody id="predictions-body-1p19q"></tbody>
+                    </table>
+                </div>
+    
+                <div id="shap-explanation-1p19q" style="display: none; margin-top: 2em;">
+                    <h2> 1p/19q Codeletion Classifier SHAP Explanation</h2>
+
+                    <div class="shap-plot-row">
+                        <div class="plot-box">
+                            <h3>SHAP Bar plot</h3>
+                            <img id="shap_1p19q_bar-image" alt="1p19q SHAP Bar" class="plot-img">
+                            <button id="download-shap_1p19q_bar-button">Download</button>
+                        </div>
+                        <div class="plot-box">
+                            <h3>SHAP Beeswarm plot</h3>
+                            <img id="shap_1p19q_beeswarm-image" alt="1p19q SHAP Beeswarm" class="plot-img">
+                            <button id="download-shap_1p19q_beeswarm-button">Download</button>
+                        </div>
+                    </div>
+                </div>
+
+                <ul id="lcmodel-file-list"></ul>
+
+                <img src="./img/ROC_algo.png" alt="Model performance metrics" class="metric_img">
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 Paris Brain Institute. All rights reserved.</p>
+        </div>
+    </footer>
+
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+    "python.analysis.extraPaths": [
+        "./preprocessing/processing/python",
+        "./preprocessing/read_raw_MRS/python",
+        "./preprocessing/visualization/python",
+        "./preprocessing/fitting/LCModel/python",
+        "./preprocessing/utils"
+    ]
+}

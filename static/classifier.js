@@ -304,27 +304,41 @@ async function displayAnalysisPlots(userFolder) {
 async function displayShapPlots(userFolder, usedMegaDiff) {
   const modelPrefix = usedMegaDiff ? 'mega_off_and_diff' : 'mega_off';
 
-  // IDH SHAP plots
-  tryDisplayShapPlot('shap-explanation-idh', 'shap_IDH_bar-image', 'download-shap_IDH_bar-button', [
-    `/users/${userFolder}/models_${modelPrefix}/idh_xgb_shap_${modelPrefix}_bar.png`,
-    `/users/${userFolder}/models_idh_mutation_mega_off/idh_xgb_shap_mega_off_bar.png`
-  ]);
+    // IDH SHAP plots (render per dataset; mixed batches can show both)
+    tryDisplayShapPlot('shap-explanation-idh', 'shap_IDH_bar-image_tcho', 'download-shap_IDH_bar-button_tcho', [
+        `/users/${userFolder}/models_idh_mutation_${modelPrefix}/idh_xgb_shap_${modelPrefix}__tCho_dataset_bar.png`,
+        // Legacy (no dataset suffix)
+        `/users/${userFolder}/models_idh_mutation_${modelPrefix}/idh_xgb_shap_${modelPrefix}_bar.png`
+    ]);
+    tryDisplayShapPlot('shap-explanation-idh', 'shap_IDH_beeswarm-image_tcho', 'download-shap_IDH_beeswarm-button_tcho', [
+        `/users/${userFolder}/models_idh_mutation_${modelPrefix}/idh_xgb_shap_${modelPrefix}__tCho_dataset_beeswarm.png`,
+        // Legacy (no dataset suffix)
+        `/users/${userFolder}/models_idh_mutation_${modelPrefix}/idh_xgb_shap_${modelPrefix}_beeswarm.png`
+    ]);
+    tryDisplayShapPlot('shap-explanation-idh', 'shap_IDH_bar-image_water', 'download-shap_IDH_bar-button_water', [
+        `/users/${userFolder}/models_idh_mutation_${modelPrefix}/idh_xgb_shap_${modelPrefix}__water_dataset_bar.png`
+    ]);
+    tryDisplayShapPlot('shap-explanation-idh', 'shap_IDH_beeswarm-image_water', 'download-shap_IDH_beeswarm-button_water', [
+        `/users/${userFolder}/models_idh_mutation_${modelPrefix}/idh_xgb_shap_${modelPrefix}__water_dataset_beeswarm.png`
+    ]);
 
-  tryDisplayShapPlot('shap-explanation-idh', 'shap_IDH_beeswarm-image', 'download-shap_IDH_beeswarm-button', [
-    `/users/${userFolder}/models_${modelPrefix}/idh_xgb_shap_${modelPrefix}_beeswarm.png`,
-    `/users/${userFolder}/models_idh_mutation_mega_off/idh_xgb_shap_mega_off_beeswarm.png`
-  ]);
-
-  // 1p/19q SHAP plots
-  tryDisplayShapPlot('shap-explanation-1p19q', 'shap_1p19q_bar-image', 'download-shap_1p19q_bar-button', [
-    `/users/${userFolder}/models_1p_19q_codeletion_${modelPrefix}/1p19q_xgb_shap_${modelPrefix}_bar.png`,
-    `/users/${userFolder}/models_1p_19q_codeletion_mega_off/1p19q_xgb_shap_mega_off_bar.png`
-  ]);
-
-  tryDisplayShapPlot('shap-explanation-1p19q', 'shap_1p19q_beeswarm-image', 'download-shap_1p19q_beeswarm-button', [
-    `/users/${userFolder}/models_1p_19q_codeletion_${modelPrefix}/1p19q_xgb_shap_${modelPrefix}_beeswarm.png`,
-    `/users/${userFolder}/models_1p_19q_codeletion_mega_off/1p19q_xgb_shap_mega_off_beeswarm.png`
-  ]);
+    // 1p/19q SHAP plots (support dataset-suffixed outputs if present)
+    tryDisplayShapPlot('shap-explanation-1p19q', 'shap_1p19q_bar-image_tcho', 'download-shap_1p19q_bar-button_tcho', [
+        `/users/${userFolder}/models_1p_19q_codeletion_${modelPrefix}/1p19q_xgb_shap_${modelPrefix}__tCho_dataset_bar.png`,
+        // Legacy (no dataset suffix)
+        `/users/${userFolder}/models_1p_19q_codeletion_${modelPrefix}/1p19q_xgb_shap_${modelPrefix}_bar.png`
+    ]);
+    tryDisplayShapPlot('shap-explanation-1p19q', 'shap_1p19q_beeswarm-image_tcho', 'download-shap_1p19q_beeswarm-button_tcho', [
+        `/users/${userFolder}/models_1p_19q_codeletion_${modelPrefix}/1p19q_xgb_shap_${modelPrefix}__tCho_dataset_beeswarm.png`,
+        // Legacy (no dataset suffix)
+        `/users/${userFolder}/models_1p_19q_codeletion_${modelPrefix}/1p19q_xgb_shap_${modelPrefix}_beeswarm.png`
+    ]);
+    tryDisplayShapPlot('shap-explanation-1p19q', 'shap_1p19q_bar-image_water', 'download-shap_1p19q_bar-button_water', [
+        `/users/${userFolder}/models_1p_19q_codeletion_${modelPrefix}/1p19q_xgb_shap_${modelPrefix}__water_dataset_bar.png`
+    ]);
+    tryDisplayShapPlot('shap-explanation-1p19q', 'shap_1p19q_beeswarm-image_water', 'download-shap_1p19q_beeswarm-button_water', [
+        `/users/${userFolder}/models_1p_19q_codeletion_${modelPrefix}/1p19q_xgb_shap_${modelPrefix}__water_dataset_beeswarm.png`
+    ]);
 }
 
 
@@ -360,6 +374,10 @@ function displayPredictions(csvText, filename, userFolder) {
     // Parse CSV
     const rows = csvText.split('\n').filter(row => row.trim() !== '');
     const headers = rows[0].split(',');
+
+    const finalPredHeader = headers.includes('Final Prediction')
+        ? 'Final Prediction'
+        : (headers.includes('Final_Prediction') ? 'Final_Prediction' : null);
     
     // Debug output
     console.log('CSV Headers:', headers);
@@ -372,7 +390,7 @@ function displayPredictions(csvText, filename, userFolder) {
     headers.forEach(header => {
         const th = document.createElement('th');
         th.textContent = header;
-        if (header === 'Final_Prediction') {
+        if (finalPredHeader && header === finalPredHeader) {
             th.style.backgroundColor = '#F1461F';
         }
         headerRow.appendChild(th);
@@ -388,7 +406,7 @@ function displayPredictions(csvText, filename, userFolder) {
         cells.forEach((cell, index) => {
             const td = document.createElement('td');
             td.textContent = cell;
-            if (headers[index] === 'Final_Prediction') {
+            if (finalPredHeader && headers[index] === finalPredHeader) {
                 td.classList.add('final-prediction');
             }
             tr.appendChild(td);
@@ -404,10 +422,10 @@ function displayPredictions(csvText, filename, userFolder) {
     
     // Check IDH status for second classifier
     if (!is1p19q) {
-        const idhStatusIndex = headers.indexOf('Final_Prediction');
+        const idhStatusIndex = finalPredHeader ? headers.indexOf(finalPredHeader) : -1;
         
         if (idhStatusIndex === -1) {
-            console.error('Final_Prediction column not found');
+            console.error('Final prediction column not found');
             return;
         }
 
@@ -638,9 +656,10 @@ async function tryDisplayShapPlot(containerId, imgId, btnId, paths) {
   }
 
   // If none of the paths worked
-  img.style.display = 'none';
-  btn.style.display = 'none';
-  container.innerHTML = '<p style="color: red;">SHAP plots unavailable for this analysis.</p>';
+    img.src = '';
+    img.style.display = 'none';
+    btn.style.display = 'none';
+    // IMPORTANT: don't overwrite container HTML; it would remove the other plot elements.
 }
 
 

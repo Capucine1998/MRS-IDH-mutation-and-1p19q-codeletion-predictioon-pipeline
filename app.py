@@ -279,7 +279,10 @@ def run_second_classifier():
                 lines = f.readlines()
                 headers = lines[0].strip().split(',')
                 try:
-                    pred_idx = headers.index('Final_Prediction')
+                    if 'Final Prediction' in headers:
+                        pred_idx = headers.index('Final Prediction')
+                    else:
+                        pred_idx = headers.index('Final_Prediction')
                     for line in lines[1:]:
                         if line.strip() and 'idh mutant' in line.lower():
                             has_idh_mutant = True

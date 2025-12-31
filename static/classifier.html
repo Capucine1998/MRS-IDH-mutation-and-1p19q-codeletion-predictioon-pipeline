@@ -12,7 +12,7 @@
         <div class="header-container">
             <img src="/static/img/paris_institute_of_brain_logo.png" alt="Logo" class="logo">
             <div class="title-container">
-                <h1>IDH MRS Classifier</h1>
+                <h1>IDH & 1p/19q MRS Classifier</h1>
             </div>
         </div>
         <nav>
@@ -63,7 +63,7 @@
                 <div id="analysis-container" style="display: none; margin-top: 2em;">
                     <h2>Metabolite Analysis Board</h2>
                     <div class="plot-box">
-                        <h3>MEGAPRESS Metabolite Analysis</h3>
+                        <h3>MEGA-PRESS Metabolite Analysis</h3>
                         <iframe class="plot-frame"></iframe>
                     </div>
                 </div>
@@ -71,7 +71,7 @@
                 <p id="result"></p>
                 <!-- IDH Status Predictions -->
                 <div id="predictions-section-idh" style="display: none;">
-                    <h2>IDH Status Predictions</h2>
+                    <h2>IDH Mutation Status Predictions</h2>
                     <table id="predictions-table-idh">
                         <thead>
                             <tr id="predictions-header-idh"></tr>
@@ -82,18 +82,31 @@
                 
                 <!-- SHAP Explanation Plots -->
                 <div id="shap-explanation-idh" style="display: none; margin-top: 2em;">
-                    <h2> IDH Status Classifier SHAP Explanation</h2>
+                    <h2> IDH Mutation Status Classifier SHAP Explanation</h2>
 
                     <div class="shap-plot-row">
                         <div class="plot-box">
-                            <h3>SHAP Bar Plot</h3>
-                            <img id="shap_IDH_bar-image" alt="IDH SHAP Bar" class="plot-img">
-                            <button id="download-shap_IDH_bar-button">Download</button>
+                            <h3>SHAP Bar Plot (tCho scaled dataset)</h3>
+                            <img id="shap_IDH_bar-image_tcho" alt="IDH SHAP Bar (tCho)" class="plot-img" style="display: none;">
+                            <button id="download-shap_IDH_bar-button_tcho" style="display: none;">Download</button>
                         </div>
                         <div class="plot-box">
-                            <h3>SHAP Beeswarm Plot</h3>
-                            <img id="shap_IDH_beeswarm-image" alt="IDH SHAP Beeswarm" class="plot-img">
-                            <button id="download-shap_IDH_beeswarm-button">Download</button>
+                            <h3>SHAP Beeswarm Plot (tCho scaled dataset)</h3>
+                            <img id="shap_IDH_beeswarm-image_tcho" alt="IDH SHAP Beeswarm (tCho)" class="plot-img" style="display: none;">
+                            <button id="download-shap_IDH_beeswarm-button_tcho" style="display: none;">Download</button>
+                        </div>
+                    </div>
+
+                    <div class="shap-plot-row">
+                        <div class="plot-box">
+                            <h3>SHAP Bar Plot (water scaled dataset)</h3>
+                            <img id="shap_IDH_bar-image_water" alt="IDH SHAP Bar (water)" class="plot-img" style="display: none;">
+                            <button id="download-shap_IDH_bar-button_water" style="display: none;">Download</button>
+                        </div>
+                        <div class="plot-box">
+                            <h3>SHAP Beeswarm Plot (water scaled dataset)</h3>
+                            <img id="shap_IDH_beeswarm-image_water" alt="IDH SHAP Beeswarm (water)" class="plot-img" style="display: none;">
+                            <button id="download-shap_IDH_beeswarm-button_water" style="display: none;">Download</button>
                         </div>
                     </div>
                 </div>
@@ -115,21 +128,34 @@
 
                     <div class="shap-plot-row">
                         <div class="plot-box">
-                            <h3>SHAP Bar plot</h3>
-                            <img id="shap_1p19q_bar-image" alt="1p19q SHAP Bar" class="plot-img">
-                            <button id="download-shap_1p19q_bar-button">Download</button>
+                            <h3>SHAP Bar plot (tCho scaled dataset)</h3>
+                            <img id="shap_1p19q_bar-image_tcho" alt="1p19q SHAP Bar (tCho)" class="plot-img" style="display: none;">
+                            <button id="download-shap_1p19q_bar-button_tcho" style="display: none;">Download</button>
                         </div>
                         <div class="plot-box">
-                            <h3>SHAP Beeswarm plot</h3>
-                            <img id="shap_1p19q_beeswarm-image" alt="1p19q SHAP Beeswarm" class="plot-img">
-                            <button id="download-shap_1p19q_beeswarm-button">Download</button>
+                            <h3>SHAP Beeswarm plot (tCho scaled dataset)</h3>
+                            <img id="shap_1p19q_beeswarm-image_tcho" alt="1p19q SHAP Beeswarm (tCho)" class="plot-img" style="display: none;">
+                            <button id="download-shap_1p19q_beeswarm-button_tcho" style="display: none;">Download</button>
+                        </div>
+                    </div>
+
+                    <div class="shap-plot-row">
+                        <div class="plot-box">
+                            <h3>SHAP Bar plot (water scaled dataset)</h3>
+                            <img id="shap_1p19q_bar-image_water" alt="1p19q SHAP Bar (water)" class="plot-img" style="display: none;">
+                            <button id="download-shap_1p19q_bar-button_water" style="display: none;">Download</button>
+                        </div>
+                        <div class="plot-box">
+                            <h3>SHAP Beeswarm plot (water scaled dataset)</h3>
+                            <img id="shap_1p19q_beeswarm-image_water" alt="1p19q SHAP Beeswarm (water)" class="plot-img" style="display: none;">
+                            <button id="download-shap_1p19q_beeswarm-button_water" style="display: none;">Download</button>
                         </div>
                     </div>
                 </div>
 
                 <ul id="lcmodel-file-list"></ul>
 
-                <img src="./img/ROC_algo.png" alt="Model performance metrics" class="metric_img">
+                <!--img src="./img/ROC_algo.png" alt="Model performance metrics" class="metric_img"-->
             </div>
         </div>
     </main>

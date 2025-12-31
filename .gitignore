@@ -31,3 +31,4 @@ glioma_mrs_preprocessing/results/*
 fitting/LCModel/output/*
 python/*
 models/*
+*.log

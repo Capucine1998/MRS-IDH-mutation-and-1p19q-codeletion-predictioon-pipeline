@@ -1,4 +1,209 @@
-let selectedDatatype = null; // Variable to store the selected datatype
+let selectedDatatype = 'MEGA-PRESS'; // Default datatype for now (no UI selection)
+
+// Manual multi-folder selections (because most browsers don't allow selecting multiple directories
+// in a single <input webkitdirectory> picker, even with the `multiple` attribute).
+let multiFolderFiles = []; // for MULTI PATIENT mode -> sent as `directoryFiles`
+let monoFidFiles = [];     // for MONO mode -> sent as `dcmFiles`
+let monoWaterFiles = [];   // for MONO mode -> sent as `waterDcmFiles`
+
+let _manualFolderPickCounter = 0;
+
+// Source-of-truth selections grouped by folder label.
+let multiFolderBatches = new Map();
+let monoFidBatches = new Map();
+let monoWaterBatches = new Map();
+
+function flattenBatches(batches) {
+    const out = [];
+    for (const items of (batches || new Map()).values()) {
+        for (const it of (items || [])) out.push(it);
+    }
+    return out;
+}
+
+function rebuildFlatSelections() {
+    multiFolderFiles = flattenBatches(multiFolderBatches);
+    monoFidFiles = flattenBatches(monoFidBatches);
+    monoWaterFiles = flattenBatches(monoWaterBatches);
+}
+
+function resetSelectedUploadsUI() {
+    // Browsers may restore <input type="file"> values via BFCache or session restore.
+    // Force a clean state on load/refresh.
+    multiFolderFiles = [];
+    monoFidFiles = [];
+    monoWaterFiles = [];
+
+    multiFolderBatches = new Map();
+    monoFidBatches = new Map();
+    monoWaterBatches = new Map();
+
+    const idsToClear = [
+        'directory',
+        'dcmFile',
+        'waterDcmFile',
+        'T1Input',
+        'T2FLAIRInput',
+        'DiffusionMRIInput',
+        'APTInput'
+    ];
+
+    for (const id of idsToClear) {
+        const input = document.getElementById(id);
+        if (input && input.type === 'file') {
+            input.value = '';
+        }
+    }
+
+    const statusIds = ['multiFolderStatus', 'fidFolderStatus', 'waterFolderStatus'];
+    for (const id of statusIds) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = '';
+    }
+
+    validateForm();
+}
+
+function isDcmFileName(name) {
+    return typeof name === 'string' && name.toLowerCase().endsWith('.dcm');
+}
+
+function selectionGroupKeyFromRelPath(relPath) {
+    // relPath examples:
+    //  - "S14/file.dcm" => group "S14"
+    //  - "parent/S14/file.dcm" (picked parent folder) => group "parent/S14"
+    //  - "S14/subdir/file.dcm" => group "S14/subdir" (best effort)
+    if (typeof relPath !== 'string' || relPath.length === 0) return '(unknown)';
+    const parts = relPath.split('/').filter(Boolean);
+    if (parts.length === 0) return '(unknown)';
+    if (parts.length === 1) return parts[0];
+
+    // If second part is actually a file name, don't include it in the group.
+    if (isDcmFileName(parts[1])) return parts[0];
+    return `${parts[0]}/${parts[1]}`;
+}
+
+function renderSelectedFoldersSummary(selectedItems) {
+    const counts = new Map();
+    for (const it of (selectedItems || [])) {
+        const key = selectionGroupKeyFromRelPath(it.relPath || '');
+        counts.set(key, (counts.get(key) || 0) + 1);
+    }
+    const folders = Array.from(counts.entries()).sort((a, b) => a[0].localeCompare(b[0]));
+    const total = selectedItems ? selectedItems.length : 0;
+    return { folders, total };
+}
+
+function updateSelectionStatus(targetArray, statusEl) {
+    if (!statusEl) return;
+    statusEl.style.whiteSpace = 'pre-line';
+
+    const { folders, total } = renderSelectedFoldersSummary(targetArray);
+    if (total === 0) {
+        statusEl.textContent = '';
+        return;
+    }
+
+    const lines = folders.map(([name, n]) => `${name}: ${n} .dcm`);
+    statusEl.textContent = `${lines.join('\n')}\nTotal: ${total} .dcm`;
+}
+
+function updateSelectionStatusFromBatches(batches, statusEl) {
+    if (!statusEl) return;
+    statusEl.style.whiteSpace = 'pre-line';
+
+    const entries = Array.from((batches || new Map()).entries())
+        .map(([label, items]) => [label, (items || []).length])
+        .filter(([, n]) => n > 0)
+        .sort((a, b) => a[0].localeCompare(b[0]));
+
+    const total = entries.reduce((acc, [, n]) => acc + n, 0);
+    if (total === 0) {
+        statusEl.textContent = '';
+        return;
+    }
+
+    const lines = entries.map(([label, n]) => `${label}: ${n} .dcm`);
+    statusEl.textContent = `${lines.join('\n')}\nTotal: ${total} .dcm`;
+}
+
+function mergeFilesIntoBatches(fileList, batches) {
+    const files = Array.from(fileList || []).filter(f => isDcmFileName(f.name));
+    const grouped = new Map();
+
+    for (const f of files) {
+        const relPath = f.webkitRelativePath || f.name;
+        const group = selectionGroupKeyFromRelPath(relPath);
+        if (!grouped.has(group)) grouped.set(group, []);
+        grouped.get(group).push({ relPath, file: f });
+    }
+
+    for (const [group, items] of grouped.entries()) {
+        let label = group;
+        if (!batches.has(label)) {
+            label = makeUniqueFolderLabel(label, new Set(batches.keys()));
+        }
+        batches.set(label, items);
+    }
+
+    rebuildFlatSelections();
+}
+
+function makeUniqueFolderLabel(desired, existingLabels) {
+    const base = (desired && desired.trim().length > 0) ? desired.trim() : `folder_${Date.now()}_${++_manualFolderPickCounter}`;
+    if (!existingLabels.has(base)) return base;
+    let i = 2;
+    while (existingLabels.has(`${base}_${i}`)) i += 1;
+    return `${base}_${i}`;
+}
+
+async function collectFilesFromDirectoryHandle(dirHandle, baseName) {
+    // Recursively collect .dcm files with a synthetic relative path.
+    // Returns: [{ file: File, relPath: string }]
+    const collected = [];
+    async function walk(handle, relPrefix) {
+        for await (const entry of handle.values()) {
+            if (entry.kind === 'file') {
+                const file = await entry.getFile();
+                if (isDcmFileName(file.name)) {
+                    collected.push({
+                        file,
+                        relPath: `${relPrefix}${file.name}`
+                    });
+                }
+            } else if (entry.kind === 'directory') {
+                await walk(entry, `${relPrefix}${entry.name}/`);
+            }
+        }
+    }
+
+    await walk(dirHandle, `${baseName}/`);
+    return collected;
+}
+
+async function addFolderInto(targetBatches, statusEl) {
+    // Uses File System Access API when available. If unavailable, caller should fall back.
+    if (!window.showDirectoryPicker) {
+        throw new Error('showDirectoryPicker not available');
+    }
+    const dirHandle = await window.showDirectoryPicker();
+    const existingLabels = new Set(Array.from((targetBatches || new Map()).keys()));
+    let dirLabel = (dirHandle.name && dirHandle.name.trim().length > 0) ? dirHandle.name.trim() : '';
+    if (!dirLabel) {
+        dirLabel = `folder_${Date.now()}_${++_manualFolderPickCounter}`;
+    }
+    if (existingLabels.has(dirLabel)) {
+        dirLabel = makeUniqueFolderLabel(dirLabel, existingLabels);
+    }
+    const items = await collectFilesFromDirectoryHandle(dirHandle, dirLabel);
+
+    // Accumulate this folder as a new batch.
+    targetBatches.set(dirLabel, items);
+
+    rebuildFlatSelections();
+    updateSelectionStatusFromBatches(targetBatches, statusEl);
+    validateForm();
+}
 
 document.addEventListener("DOMContentLoaded", function () {
     const multiBtn = document.getElementById("multiBtn");
@@ -15,6 +220,15 @@ document.addEventListener("DOMContentLoaded", function () {
     const dcmFileInput = document.getElementById("dcmFile");
     const waterDcmFileInput = document.getElementById("waterDcmFile");
 
+    const addMultiFolderBtn = document.getElementById("addMultiFolderBtn");
+    const addFidFolderBtn = document.getElementById("addFidFolderBtn");
+    const addWaterFolderBtn = document.getElementById("addWaterFolderBtn");
+
+    const multiFolderStatus = document.getElementById("multiFolderStatus");
+    const fidFolderStatus = document.getElementById("fidFolderStatus");
+    const waterFolderStatus = document.getElementById("waterFolderStatus");
+
+    // Optional section: may be absent if UI hides these options.
     const anatomicalInputs = {
         "T1": document.getElementById("T1Input"),
         "T2-FLAIR": document.getElementById("T2FLAIRInput"),
@@ -25,6 +239,22 @@ document.addEventListener("DOMContentLoaded", function () {
     
 
     runBtn.addEventListener("click", runPipeline);
+
+    // Add a small hint under the run button to explain why it may be disabled.
+    (function ensureRunHint() {
+        if (document.getElementById('runHint')) return;
+        const hint = document.createElement('div');
+        hint.id = 'runHint';
+        hint.style.marginTop = '8px';
+        hint.style.fontSize = '14px';
+        hint.style.color = '#444';
+        hint.style.whiteSpace = 'pre-line';
+        // Insert right after the Run button
+        runBtn.insertAdjacentElement('afterend', hint);
+    })();
+
+    // Clear any restored file inputs on first load.
+    resetSelectedUploadsUI();
 
     multiBtn.addEventListener("click", function () {
         toggleForms(multiBtn, monoBtn, multiForm, monoForm);
@@ -55,21 +285,86 @@ document.addEventListener("DOMContentLoaded", function () {
     dcmFileInput.addEventListener("change", function () {
         handleFileInputChange(dcmFileInput, '.dcm');
         console.log("DCM files selected:", dcmFileInput.files);
+        if (dcmFileInput.files && dcmFileInput.files.length > 0) {
+            mergeFilesIntoBatches(dcmFileInput.files, monoFidBatches);
+            updateSelectionStatusFromBatches(monoFidBatches, fidFolderStatus);
+        }
+        validateForm();
     });
 
 
     waterDcmFileInput.addEventListener("change", function () {
         handleFileInputChange(waterDcmFileInput, '.dcm');
+        if (waterDcmFileInput.files && waterDcmFileInput.files.length > 0) {
+            mergeFilesIntoBatches(waterDcmFileInput.files, monoWaterBatches);
+            updateSelectionStatusFromBatches(monoWaterBatches, waterFolderStatus);
+        }
+        validateForm();
     });
 
     Object.values(anatomicalInputs).forEach(input => {
+        if (!input) return;
         input.addEventListener("change", function () {
             handleAnatomicalInputChange(input);
         });
     });
 
-    directoryInput.addEventListener("input", validateForm);
+    directoryInput.addEventListener("input", function () {
+        // Directory upload fallback: use webkitRelativePath to keep per-folder grouping
+        if (directoryInput.files && directoryInput.files.length > 0) {
+            mergeFilesIntoBatches(directoryInput.files, multiFolderBatches);
+            updateSelectionStatusFromBatches(multiFolderBatches, multiFolderStatus);
+        }
+        validateForm();
+    });
+    directoryInput.addEventListener("change", function () {
+        if (directoryInput.files && directoryInput.files.length > 0) {
+            mergeFilesIntoBatches(directoryInput.files, multiFolderBatches);
+            updateSelectionStatusFromBatches(multiFolderBatches, multiFolderStatus);
+        }
+        validateForm();
+    });
 
+    // Manual multi-folder picker buttons (Chromium / secure context)
+    if (addMultiFolderBtn) {
+        addMultiFolderBtn.addEventListener('click', async () => {
+            try {
+                await addFolderInto(multiFolderBatches, multiFolderStatus);
+            } catch (e) {
+                // Fallback: open the classic picker
+                directoryInput.click();
+            }
+        });
+    }
+    if (addFidFolderBtn) {
+        addFidFolderBtn.addEventListener('click', async () => {
+            try {
+                await addFolderInto(monoFidBatches, fidFolderStatus);
+            } catch (e) {
+                dcmFileInput.click();
+            }
+        });
+    }
+    if (addWaterFolderBtn) {
+        addWaterFolderBtn.addEventListener('click', async () => {
+            try {
+                await addFolderInto(monoWaterBatches, waterFolderStatus);
+            } catch (e) {
+                waterDcmFileInput.click();
+            }
+        });
+    }
+
+});
+
+// Also clear inputs when the page is restored from BFCache (back/forward navigation)
+// or when the browser rehydrates the page state.
+window.addEventListener('pageshow', function () {
+    try {
+        resetSelectedUploadsUI();
+    } catch (e) {
+        // no-op
+    }
 });
 
 
@@ -152,14 +447,23 @@ async function runPipeline(event) {
     const directoryInput = document.getElementById("directory");
 
     if (monoBtn.classList.contains("active")) {
-        const dcmFiles = Array.from(dcmFileInput.files);
-        const waterDcmFiles = Array.from(waterDcmFileInput.files);
+        const dcmFiles = (monoFidFiles.length > 0)
+            ? monoFidFiles
+            : Array.from(dcmFileInput.files).filter(f => isDcmFileName(f.name)).map(f => ({ relPath: f.webkitRelativePath || f.name, file: f }));
 
-        dcmFiles.forEach(file => formData.append('dcmFiles', file));
-        waterDcmFiles.forEach(file => formData.append('waterDcmFiles', file));
+        const waterDcmFiles = (monoWaterFiles.length > 0)
+            ? monoWaterFiles
+            : Array.from(waterDcmFileInput.files).filter(f => isDcmFileName(f.name)).map(f => ({ relPath: f.webkitRelativePath || f.name, file: f }));
+
+        // Use relPath as the uploaded filename to preserve folder grouping and avoid collisions.
+        dcmFiles.forEach(({ file, relPath }) => formData.append('dcmFiles', file, relPath));
+        waterDcmFiles.forEach(({ file, relPath }) => formData.append('waterDcmFiles', file, relPath));
     } else if (multiBtn.classList.contains("active")) {
-        const directoryFiles = Array.from(directoryInput.files);
-        directoryFiles.forEach(file => formData.append('directoryFiles', file));
+        const directoryFiles = (multiFolderFiles.length > 0)
+            ? multiFolderFiles
+            : Array.from(directoryInput.files).filter(f => isDcmFileName(f.name)).map(f => ({ relPath: f.webkitRelativePath || f.name, file: f }));
+
+        directoryFiles.forEach(({ file, relPath }) => formData.append('directoryFiles', file, relPath));
     }
 
     try {
@@ -439,6 +743,11 @@ function handleCheckboxButtonClick(button, anatomicalInputs) {
     const type = button.getAttribute("data-type");
     const input = anatomicalInputs[type];
 
+    // Optional UI: if anatomical inputs aren't present, ignore.
+    if (!input) {
+        return;
+    }
+
     if (button.classList.contains("active")) {
         button.classList.remove("active");
         input.value = "";
@@ -490,30 +799,62 @@ function validateForm() {
     const dcmFileInput = document.getElementById("dcmFile");
     const radioGroups = document.querySelectorAll(".radio-btn");
 
-    let isRadioChecked = false;
-    let isConditionChecked = false;
+    // If the options UI is removed, treat these as satisfied.
+    const hasMrsDataOptions = document.querySelectorAll('.radio-btn[data-group="mrs-data"]').length > 0;
+    const hasConditionOptions = document.querySelectorAll('.radio-btn[data-group="condition"]').length > 0;
+
+    let isRadioChecked = !hasMrsDataOptions;
+    let isConditionChecked = !hasConditionOptions;
 
     radioGroups.forEach((button) => {
-        if (button.classList.contains("active") && button.getAttribute("data-group") === "mrs-data") {
+        if (hasMrsDataOptions && button.classList.contains("active") && button.getAttribute("data-group") === "mrs-data") {
             isRadioChecked = true;
         }
-        if (button.classList.contains("active") && button.getAttribute("data-group") === "condition") {
+        if (hasConditionOptions && button.classList.contains("active") && button.getAttribute("data-group") === "condition") {
             isConditionChecked = true;
         }
     });
 
     console.log("Radio checked:", isRadioChecked);
     console.log("Condition checked:", isConditionChecked);
-    console.log("DCM files selected:", dcmFileInput.files.length);
+    const monoCount = (monoFidFiles.length > 0) ? monoFidFiles.length : dcmFileInput.files.length;
+    const multiCount = (multiFolderFiles.length > 0) ? multiFolderFiles.length : directoryInput.files.length;
+
+    console.log("DCM files selected (mono):", monoCount);
+    console.log("DCM files selected (multi):", multiCount);
+
+    const runHint = document.getElementById('runHint');
+    const hints = [];
+    if (hasMrsDataOptions && !isRadioChecked) hints.push('Select an MRS DATA option.');
+    if (hasConditionOptions && !isConditionChecked) hints.push('Select a PATIENT CONDITION option.');
 
     if (multiBtn.classList.contains("active")) {
-        if (isRadioChecked && isConditionChecked && directoryInput.files.length > 0) {
+        if (multiCount <= 0) {
+            hints.push('MULTI mode: select at least one folder (use “Add folder” or the folder picker).');
+            if (monoCount > 0) {
+                hints.push(`You currently have MONO input selected (${monoCount} .dcm). Click “MONO (Files)” to run with those.`);
+            }
+        }
+    } else if (monoBtn.classList.contains("active")) {
+        if (monoCount <= 0) {
+            hints.push('MONO mode: select at least one .dcm file/folder.');
+            if (multiCount > 0) {
+                hints.push(`You currently have MULTI input selected (${multiCount} .dcm). Click “MULTI PATIENT (Folder)” to run with those.`);
+            }
+        }
+    }
+    if (runHint) {
+        runHint.textContent = hints.join('\n');
+    }
+
+    if (multiBtn.classList.contains("active")) {
+        if (isRadioChecked && isConditionChecked && multiCount > 0) {
             runBtn.disabled = false;
         } else {
             runBtn.disabled = true;
         }
     } else if (monoBtn.classList.contains("active")) {
-        if (isRadioChecked && isConditionChecked && dcmFileInput.files.length > 0) {
+        if (isRadioChecked && isConditionChecked && monoCount > 0) {
             runBtn.disabled = false;
         } else {
             runBtn.disabled = true;

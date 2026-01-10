@@ -8,6 +8,7 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import os
 from pathlib import Path
+from pathlib import PurePosixPath
 import glob
 import zipfile
 from io import BytesIO
@@ -59,45 +60,131 @@ def run_processing():
         # File handling
         dcm_files = request.files.getlist('dcmFiles')
         water_dcm_files = request.files.getlist('waterDcmFiles')
+        directory_files = request.files.getlist('directoryFiles')
+
+        # MULTI mode uploads come in as `directoryFiles`.
+        # Treat them as DCM inputs if `dcmFiles` is empty.
+        if (not dcm_files) and directory_files:
+            dcm_files = directory_files
+
         print(f"Received {len(dcm_files)} DCM files and {len(water_dcm_files)} water reference files")
 
-        temp_dir = '/home/mouette/websites/idh-mrs-classifier/temp_uploads'
-        os.makedirs(temp_dir, exist_ok=True)
-        print(f"Using temp directory: {temp_dir}")
+        if not dcm_files:
+            return jsonify({
+                'status': 'error',
+                'message': 'No DCM files received (check folder selection / upload fields).'
+            }), 400
 
-        for file in dcm_files:
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(temp_dir, filename)
-            file.save(file_path)
-            dcm_paths.append(file_path)
+        # Save uploads into a per-request temp folder, preserving client relative paths.
+        # This is important because the MRS pipeline groups by parent folder; flattening breaks it.
+        base_temp_dir = '/home/mouette/websites/idh-mrs-classifier/temp_uploads'
+        request_temp_dir = os.path.join(base_temp_dir, str(uuid.uuid4()))
+        os.makedirs(request_temp_dir, exist_ok=True)
+        print(f"Using temp directory: {request_temp_dir}")
 
-        for file in water_dcm_files:
-            filename = secure_filename(file.filename)
-            file_path = os.path.join(temp_dir, filename)
-            file.save(file_path)
-            water_dcm_paths.append(file_path)
+        def safe_save_upload(upload, root_dir):
+            # upload.filename may include a relative path (e.g. "S14_xxx/IM-0001.dcm" or "S14/IM-0001.dcm")
+            raw_name = upload.filename or ''
+            rel = PurePosixPath(raw_name)
+            # Reject absolute paths and traversal
+            if rel.is_absolute() or '..' in rel.parts:
+                raise ValueError(f"Invalid upload filename/path: {raw_name!r}")
+
+            safe_parts = [secure_filename(p) for p in rel.parts if p not in ('', '.')]
+            if not safe_parts:
+                safe_parts = [secure_filename(raw_name) or f"file_{uuid.uuid4()}" ]
+
+            out_path = os.path.join(root_dir, *safe_parts)
+            out_dir = os.path.dirname(out_path)
+            os.makedirs(out_dir, exist_ok=True)
+
+            # Ensure out_path stays within root_dir
+            root_real = os.path.realpath(root_dir)
+            out_real = os.path.realpath(out_path)
+            if not out_real.startswith(root_real + os.sep):
+                raise ValueError(f"Refusing to write outside temp dir: {raw_name!r}")
+
+            upload.save(out_path)
+            return out_path
+
+        print(f"📥 Saving {len(dcm_files)} DCM files...")
+        for i, upload in enumerate(dcm_files, 1):
+            dcm_paths.append(safe_save_upload(upload, request_temp_dir))
+            if i % 50 == 0 or i == len(dcm_files):
+                print(f"   ... saved {i}/{len(dcm_files)} DCMs")
+
+        if water_dcm_files:
+            print(f"📥 Saving {len(water_dcm_files)} water reference files...")
+            for i, upload in enumerate(water_dcm_files, 1):
+                water_dcm_paths.append(safe_save_upload(upload, request_temp_dir))
+                if i % 50 == 0 or i == len(water_dcm_files):
+                    print(f"   ... saved {i}/{len(water_dcm_files)} water files")
+
+        # Deterministic ordering (closest to DEBUG, which sorts paths)
+        print("📋 Sorting files...")
+        dcm_paths = sorted(dcm_paths)
+        water_dcm_paths = sorted(water_dcm_paths)
+        print("   ✓ Sorting complete")
+
+        try:
+            parent_dirs = sorted({os.path.dirname(p) for p in dcm_paths})
+            print(f"✅ Upload complete: saved DCMs into {len(parent_dirs)} folder(s)")
+        except Exception as e:
+            print(f"⚠️  Could not count folders: {e}")
         
-        # date = time.strftime("%Y%m%d-%H%M%S")
-        # logfile = os.path.join(os.getcwd(), "logs", "processing_log_" + date + ".txt")
-        # print(f"Log file will be saved to: {logfile}")
+        print("DCM file count:", len(dcm_paths))
+        print("Water file count:", len(water_dcm_paths))
+        print("\n🔄 Starting pipeline (this may take several minutes for LCModel fitting)...")
+        print("   Streaming progress output below:\n")
 
         # Run processing
-        cmd = ['python', 'glioma_mrs_preprocessing/MRS_process.py', ' '.join(dcm_paths), ' '.join(water_dcm_paths)]
-        # print(f"\nExecuting command: {' '.join(cmd)}")
+        cmd = ['python', 'glioma_mrs_preprocessing/MRS_process.py', ' '.join(dcm_paths)]
+        # Only pass water argument if we actually received water files.
+        if water_dcm_paths:
+            cmd.append(' '.join(water_dcm_paths))
         
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            cwd=os.path.dirname(__file__)  # Run from application root
-        )
+        # Run with line-buffered output for real-time streaming
+        stdout_lines = []
+        stderr_lines = []
+        result_returncode = None
+        try:
+            proc = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1,  # Line-buffered
+                cwd=os.path.dirname(__file__)
+            )
+            
+            # Stream output in real-time with timeout
+            try:
+                stdout, stderr = proc.communicate(timeout=3600)  # 1 hour max
+                stdout_lines = stdout.splitlines() if stdout else []
+                stderr_lines = stderr.splitlines() if stderr else []
+                result_returncode = proc.returncode
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                stdout, stderr = proc.communicate()
+                raise ValueError("Pipeline took too long (>1 hour) - likely stuck in LCModel fitting. Check inputs or reduce dataset size.")
+            
+            # Print progress (last N lines to keep output manageable)
+            for line in stdout_lines[-50:]:
+                print(f"  [PROC] {line}")
+            if stderr_lines:
+                print("\n--- Errors/Warnings: ---")
+                for line in stderr_lines[-20:]:
+                    print(f"  [ERR] {line}")
+        except Exception as e:
+            print(f"  ❌ Pipeline error: {e}")
+            raise
 
-        print("\nSubprocess completed")
-        print(f"Return code: {result.returncode}")
-        print("=== STDOUT ===")
-        print(result.stdout)
-        print("=== STDERR ===")
-        print(result.stderr)
+        print(f"\n✅ Pipeline completed with return code: {result_returncode}")
+        if result_returncode != 0:
+            raise ValueError(f"Pipeline failed (return code {result_returncode}). Check stderr above.")
+        
+        result_stdout = '\n'.join(stdout_lines)
+        result_stderr = '\n'.join(stderr_lines)
 
         
         pdf_files = []
@@ -126,8 +213,8 @@ def run_processing():
         # 3. Prepare response - maintain both PDF and report outputs
         response_data = {
             'status': 'success',
-            'output': result.stdout,
-            'logs': result.stdout + result.stderr,
+            'output': result_stdout,
+            'logs': result_stdout + result_stderr,
             'pdfs': pdf_files or ["No PDF output found"],
             'lcmodel_files': lcmodel_files,
             'report': report_main_html,  # This maintains your report container
@@ -146,16 +233,23 @@ def run_processing():
         
         # Cleanup even if error occurs
         try:
-            for file_path in dcm_paths + water_dcm_paths:
-                if os.path.exists(file_path):
-                    os.remove(file_path)
-        except:
+            if 'request_temp_dir' in locals() and os.path.exists(request_temp_dir):
+                shutil.rmtree(request_temp_dir, ignore_errors=True)
+        except Exception:
             pass
             
         return jsonify({
             'status': 'error',
             'message': str(e)
         }), 500
+
+    finally:
+        # Best-effort cleanup after success too
+        try:
+            if 'request_temp_dir' in locals() and os.path.exists(request_temp_dir):
+                shutil.rmtree(request_temp_dir, ignore_errors=True)
+        except Exception:
+            pass
 
 
 

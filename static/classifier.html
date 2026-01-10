@@ -17,8 +17,8 @@
         </div>
         <nav>
             <ul>
-                <li><a href="/static/mrs-processing.html" class="nav-button unpressed">MRS Processing</a></li>
-                <li><a href="/static/classifier.html" class="nav-button pressed">Classifier</a></li>
+                <li><a href="/static/mrs-processing.html" class="nav-button unpressed">MEGA-PRESS Processing</a></li>
+                <li><a href="/static/classifier.html" class="nav-button pressed">IDH & 1p/19q Classifier</a></li>
             </ul>
         </nav>
     </header>
@@ -29,26 +29,92 @@
 
         <div id="classifier" class="section">
             <div class="container">
+                <div class="form_fake" style="margin-bottom: 1.5em;">
+                    <h2 style="margin-top: 0; color: #223D70;">Research Prototype (Not for Clinical Use)</h2>
+                    <p style="margin: 0 0 0.75em 0;">
+                        This classifier is a prototype developed from research/clinical data. It is intended for research and educational purposes only.
+                    </p>
+                    <p style="margin: 0 0 0.75em 0;">
+                        <span style="color: #b00020; font-weight: 700;">It must not be used as a clinical diagnosis tool.</span> Clinical use would require appropriate prospective clinical validation (e.g., clinical trials) and regulatory evaluation.
+                    </p>
+                    <p style="margin: 0 0 0.75em 0;">
+                        When used responsibly, it may help support non-invasive molecular status prediction alongside ground-truth histopathological / molecular analysis.
+                    </p>
+                    <p style="margin: 0;">
+                        This is an early step toward potential clinical translation and is expected to improve as it is trained and validated on larger datasets over time. If you would like to collaborate (e.g., contribute glioma MEGA-PRESS MRS data) or need support for molecular detection from MRS, please contact the team maintaining this website.
+                    </p>
+                </div>
+
+                <div class="form_fake" style="margin-bottom: 1.5em;">
+                    <h2 style="margin-top: 0; color: #223D70;">LCModel file requirements</h2>
+                                      <p style="margin: 0 0 0.75em 0;">
+                        These LCModel output files can be obtained by running the <a href="/static/mrs-processing.html">MEGA-PRESS processing pipeline</a> available on this website.
+                    </p>
+
+                    <p style="margin: 0 0 0.75em 0;">
+                        If you want to use your own LCModel-processed data, your basis-set must include the following fitted metabolites for the classifier to work.
+                    </p>
+  
+                    <h3 style="margin: 0.75em 0 0.25em 0;">IDH prediction</h3>
+                    <p style="margin: 0 0 0.25em 0;"><strong>Non edited metabolites:</strong></p>
+                    <ul style="margin: 0 0 0.75em 1.25em;">
+                        <li>2HG</li>
+                        <li>Glutathione</li>
+                        <li>Glutamate + Glutamine</li>
+                        <li>Alanine</li>
+                        <li>Glutamate</li>
+                        <li>Betaine</li>
+                        <li>Glycine</li>
+                        <li>GABA</li>
+                        <li>Glutamine</li>
+                        <li>Lip13a+Lip13b+Lip0+MM09</li>
+                        <li>Lip20</li>
+                        <li>syo-inositol</li>
+                    </ul>
+
+                    <p style="margin: 0 0 0.25em 0;"><strong>Edited metabolites:</strong></p>
+                    <ul style="margin: 0 0 0.75em 1.25em;">
+                        <li>2-Hydroxyglutarate</li>
+                        <li>CRLB 2-Hydroxyglutarate</li>
+                        <li>GABA</li>
+                    </ul>
+
+                    <h3 style="margin: 0.75em 0 0.25em 0;">1p/19q codeletion prediction (in addition to IDH)</h3>
+                    <p style="margin: 0 0 0.25em 0;"><strong>Non edited metabolites:</strong></p>
+                    <ul style="margin: 0 0 0.75em 1.25em;">
+                        <li>Cystathionine</li>
+                        <li>Macromolecules</li>
+                        <li>Total Choline</li>
+                        <li>Citrate</li>
+                        <li>Glucose</li>
+                        <li>myo-inositol</li>
+                        <li>Lip13a+Lip13b+Lip0+MM09</li>
+                    </ul>
+
+                    <p style="margin: 0 0 0.25em 0;"><strong>Edited metabolites:</strong></p>
+                    <ul style="margin: 0 0 0.25em 1.25em;">
+                        <li>Cystathionine</li>
+                        <li>CRLB Cystathionine</li>
+                        <li>CRLB 2-Hydroxyglutarate</li>
+                    </ul>
+                </div>
+
                 <form id="classifierForm" onsubmit="runPythonScript(event)">
                     <div class="form-group">
-                        <label for="fileInputCoordOff">MEGA_OFF .COORD files:</label>
+                        <label for="fileInputCoordOff">Non-edited .COORD files:</label>
                         <input type="file" id="fileInputCoordOff" name="fileInputCoordOff" multiple required>
                     </div>
                     <div class="form-group">
-                        <label for="fileInputPrintOff">MEGA_OFF .PRINT files:</label>
+                        <label for="fileInputPrintOff">Non-edited .PRINT files:</label>
                         <input type="file" id="fileInputPrintOff" name="fileInputPrintOff" multiple required>
                     </div>
                     <div class="form-group">
-                        <label for="fileInputCoordDiff">MEGA_DIFF .COORD files:</label>
+                        <label for="fileInputCoordDiff">Edited .COORD files:</label>
                         <input type="file" id="fileInputCoordDiff" name="fileInputCoordDiff" multiple>
                     </div>
                     <div class="form-group">
-                        <label for="fileInputPrintDiff">MEGA_DIFF .PRINT files:</label>
+                        <label for="fileInputPrintDiff">Edited .PRINT files:</label>
                         <input type="file" id="fileInputPrintDiff" name="fileInputPrintDiff" multiple>
-                    </div>
-                    <div class="form-group">
-                        <input type="checkbox" id="showResultCheckbox" name="showResultCheckbox">
-                        <label for="showResultCheckbox">Show Output Logs</label>
                     </div>
                     <button type="submit">Launch Prediction</button>
                 </form>

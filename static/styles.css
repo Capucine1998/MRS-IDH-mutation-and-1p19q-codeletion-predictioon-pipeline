@@ -17,6 +17,12 @@ body {
     padding: 20px;
 }
 
+@media (max-width: 900px) {
+    .container {
+        max-width: 95%;
+    }
+}
+
 /* Header styles */
 header {
     background-color: #223D70;
@@ -168,6 +174,27 @@ form input[type="file"] {
     background: #A6B5D7;
     cursor: pointer;
     transition: 0.3s;
+}
+
+.toggle-switch button:first-child {
+    border-top-left-radius: 6px;
+    border-bottom-left-radius: 6px;
+}
+
+.toggle-switch button:last-child {
+    border-top-right-radius: 6px;
+    border-bottom-right-radius: 6px;
+}
+
+#multiFolderStatus,
+#fidFolderStatus,
+#waterFolderStatus {
+    display: inline-block;
+    vertical-align: middle;
+    white-space: pre-line;
+    color: #223D70;
+    font-weight: 600;
+    max-width: 100%;
 }
 
 .toggle-switch button.active {

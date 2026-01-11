@@ -157,6 +157,167 @@ function makeUniqueFolderLabel(desired, existingLabels) {
     return `${base}_${i}`;
 }
 
+function postFormDataWithProgress(url, formData, onProgress) {
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url, true);
+
+        xhr.upload.onprogress = (evt) => {
+            if (typeof onProgress !== 'function') return;
+            if (evt.lengthComputable) {
+                onProgress({ loaded: evt.loaded, total: evt.total });
+            } else {
+                onProgress({ loaded: evt.loaded, total: null });
+            }
+        };
+
+        xhr.onload = () => {
+            let json = null;
+            try {
+                json = JSON.parse(xhr.responseText || '{}');
+            } catch (e) {
+                // If server returns non-JSON error, preserve raw text.
+                return reject(new Error(`Server response was not JSON (status ${xhr.status}).`));
+            }
+            resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, json });
+        };
+
+        xhr.onerror = () => reject(new Error('Network error during upload.'));
+        xhr.ontimeout = () => reject(new Error('Upload timed out.'));
+
+        xhr.send(formData);
+    });
+}
+
+function setWorking(isWorking, message) {
+    const indicator = document.getElementById('workingIndicator');
+    const text = document.getElementById('workingText');
+    if (indicator) {
+        indicator.style.display = isWorking ? 'flex' : 'none';
+    }
+    if (text && typeof message === 'string') {
+        text.textContent = message;
+    }
+}
+
+function appendOutputLine(line) {
+    const outputEl = document.getElementById('output');
+    if (!outputEl) return;
+    const prev = outputEl.innerText || '';
+    outputEl.innerText = prev ? (prev + '\n' + line) : String(line);
+    outputEl.scrollTop = outputEl.scrollHeight;
+}
+
+function formatElapsed(seconds) {
+    const s = Math.max(0, Math.floor(seconds || 0));
+    const mm = Math.floor(s / 60);
+    const ss = s % 60;
+    return mm > 0 ? `${mm}m${String(ss).padStart(2, '0')}s` : `${ss}s`;
+}
+
+async function buildTarGzFromItems(items, onStatus) {
+    // Create a minimal ustar tar archive in-memory, then gzip it using CompressionStream.
+    // items: [{ relPath, file }]
+    const enc = new TextEncoder();
+
+    function padOctal(value, length) {
+        // tar uses ASCII octal with trailing NUL
+        const s = value.toString(8);
+        return ("0".repeat(Math.max(0, length - s.length - 1)) + s + "\0");
+    }
+
+    function writeString(buf, offset, str, maxLen) {
+        const b = enc.encode(str);
+        buf.set(b.slice(0, maxLen), offset);
+    }
+
+    function checksum(header) {
+        let sum = 0;
+        for (let i = 0; i < header.length; i++) sum += header[i];
+        return sum;
+    }
+
+    function buildHeader(name, size, typeflagChar) {
+        const header = new Uint8Array(512);
+
+        // name (100)
+        writeString(header, 0, name, 100);
+        // mode (8), uid (8), gid (8)
+        writeString(header, 100, padOctal(0o644, 8), 8);
+        writeString(header, 108, padOctal(0, 8), 8);
+        writeString(header, 116, padOctal(0, 8), 8);
+        // size (12), mtime (12)
+        writeString(header, 124, padOctal(size, 12), 12);
+        writeString(header, 136, padOctal(Math.floor(Date.now() / 1000), 12), 12);
+        // checksum field filled with spaces for calculation
+        for (let i = 148; i < 156; i++) header[i] = 0x20;
+        // typeflag
+        header[156] = (typeflagChar || '0').charCodeAt(0);
+        // magic "ustar\0" + version "00"
+        writeString(header, 257, "ustar\0", 6);
+        writeString(header, 263, "00", 2);
+        // compute checksum and write it
+        const sum = checksum(header);
+        const chk = padOctal(sum, 8);
+        writeString(header, 148, chk, 8);
+        return header;
+    }
+
+    function pushPaddedData(data) {
+        parts.push(data);
+        const padLen = (512 - (data.length % 512)) % 512;
+        if (padLen) parts.push(new Uint8Array(padLen));
+    }
+
+    async function fileToUint8(file) {
+        const ab = await file.arrayBuffer();
+        return new Uint8Array(ab);
+    }
+
+    const parts = [];
+    let idx = 0;
+    const total = (items || []).length;
+    for (const it of (items || [])) {
+        idx += 1;
+        const rel = (it.relPath || it.file?.name || `file_${idx}`).replace(/^\/+/, '');
+        if (typeof onStatus === 'function') onStatus(`Preparing archive... (${idx}/${total}) ${rel}`);
+
+        const data = await fileToUint8(it.file);
+
+        // IMPORTANT: ustar header name field is limited to 100 bytes.
+        // Many DICOM filenames/paths exceed that; truncation can cause collisions and
+        // overwrite files during extraction, leading to distorted processing results.
+        // Use GNU tar LongLink extension so Python's tarfile can restore the full path.
+        const relBytes = enc.encode(rel);
+        if (relBytes.length > 100) {
+            const longNameData = new Uint8Array(relBytes.length + 1);
+            longNameData.set(relBytes, 0);
+            longNameData[relBytes.length] = 0; // NUL terminator
+
+            const longHeader = buildHeader('././@LongLink', longNameData.length, 'L');
+            parts.push(longHeader);
+            pushPaddedData(longNameData);
+        }
+
+        const header = buildHeader(rel, data.length, '0');
+        parts.push(header);
+        pushPaddedData(data);
+    }
+    // two empty blocks
+    parts.push(new Uint8Array(512));
+    parts.push(new Uint8Array(512));
+
+    const tarBlob = new Blob(parts, { type: 'application/x-tar' });
+    if (!('CompressionStream' in window)) {
+        // No gzip available; return tar only.
+        return { blob: tarBlob, filename: 'upload.tar' };
+    }
+    if (typeof onStatus === 'function') onStatus('Compressing archive (gzip)...');
+    const gzStream = tarBlob.stream().pipeThrough(new CompressionStream('gzip'));
+    const gzBlob = await new Response(gzStream).blob();
+    return { blob: gzBlob, filename: 'upload.tar.gz' };
+}
+
 async function collectFilesFromDirectoryHandle(dirHandle, baseName) {
     // Recursively collect .dcm files with a synthetic relative path.
     // Returns: [{ file: File, relPath: string }]
@@ -439,6 +600,292 @@ function createPdfControls(pdfPath) {
 async function runPipeline(event) {
     event.preventDefault();
 
+    // Reset UI for a fresh run
+    const outputEl = document.getElementById('output');
+    if (outputEl) outputEl.innerText = '';
+    setWorking(true, 'Preparing upload...');
+
+    function handleProcessingResult(result) {
+        const userFolder = result.user_folder?.replace(/^users\//, '') || '';
+
+        console.log("Pipeline output:", result.output);
+        alert("Pipeline ran successfully!");
+
+        appendOutputLine('=== Completed ===');
+        if (result.output) {
+            appendOutputLine(result.output);
+        }
+
+        // Display PDFs
+        const pdfContainer = document.getElementById('pdf-container');
+        pdfContainer.innerHTML = '';
+        
+        if (!result.pdfs || result.pdfs.length === 0) {
+            pdfContainer.innerHTML = "<p>No PDF output found.</p>";
+        }
+
+        const megaDiff = result.pdfs.find(p => p.startsWith("mega_diff/"));
+        const megaOff = result.pdfs.find(p => p.startsWith("mega_off/"));
+
+        // Handle MEGA DIFF + MEGA OFF side-by-side
+        if (megaDiff || megaOff) {
+            const megaSection = document.createElement('div');
+            megaSection.style.margin = "2em auto";
+            megaSection.style.maxWidth = "95%";
+            megaSection.style.backgroundColor = "#ffffff";
+            megaSection.style.borderRadius = "8px";
+            megaSection.style.boxShadow = "0 0 15px rgba(0, 0, 0, 0.1)";
+            megaSection.style.padding = "1em";
+
+            const title = document.createElement('h2');
+            title.innerText = "MEGA PRESS LCMODEL OUTPUTS";
+            title.style.textAlign = "center";
+            title.style.color = "#223D70";
+            title.style.marginBottom = "1em";
+            megaSection.appendChild(title);
+
+            const row = document.createElement('div');
+            row.style.display = "flex";
+            row.style.gap = "20px";
+            row.style.justifyContent = "center";
+            row.style.flexWrap = "wrap";
+
+            [megaDiff, megaOff].forEach((pdf, i) => {
+                if (pdf) {
+                    const box = document.createElement('div');
+                    box.style.flex = "1 1 48%";
+                    box.style.minWidth = "400px";
+
+                    const label = document.createElement('h3');
+                    label.innerText = pdf.startsWith("mega_diff") ? "MEGA DIFF" : "MEGA OFF";
+                    label.style.textAlign = "center";
+                    label.style.color = "#264766";
+                    label.style.marginBottom = "10px";
+
+                    box.appendChild(label);
+                    box.appendChild(createPdfControls(pdf));
+
+                    row.appendChild(box);
+
+                    // Add associated files list + download all
+                    const downloadBox = document.createElement('div');
+                    downloadBox.style.margin = "10px auto";
+                    downloadBox.style.padding = "10px";
+                    downloadBox.style.backgroundColor = "#E3E9EF";
+                    downloadBox.style.borderRadius = "6px";
+                    downloadBox.style.boxShadow = "0 0 8px rgba(0,0,0,0.05)";
+
+
+                    const downloadAll = document.createElement('a');
+                    downloadAll.href = `/download-mega/${pdf.startsWith("mega_diff") ? "mega_diff" : "mega_off"}`;
+                    downloadAll.innerText = "Download all related files (.CONTROL/.COORD/.PDF/.PLOTIN/.PRINT/.PS/.RAW)";
+                    downloadAll.style.display = "inline-block";
+                    downloadAll.style.marginTop = "10px";
+                    downloadAll.style.padding = "8px 16px";
+                    downloadAll.style.backgroundColor = "#223D70";
+                    downloadAll.style.color = "#fff";
+                    downloadAll.style.borderRadius = "5px";
+                    downloadAll.style.textDecoration = "none";
+
+                    downloadBox.appendChild(downloadAll);
+                    box.appendChild(downloadBox);
+
+                }
+
+ 
+            });
+
+
+            megaSection.appendChild(row);
+            pdfContainer.appendChild(megaSection);
+        }
+
+        //  Handle other PDFs
+        result.pdfs.forEach((pdf) => {
+            if (pdf.startsWith("mega_diff/") || pdf.startsWith("mega_off/")) return;
+
+            const wrapper = document.createElement('div');
+            wrapper.style.margin = "2em auto";
+            wrapper.style.maxWidth = "1000px";
+            wrapper.style.padding = "1em";
+            wrapper.style.backgroundColor = "#ffffff";
+            wrapper.style.borderRadius = "8px";
+            wrapper.style.boxShadow = "0 0 15px rgba(0, 0, 0, 0.1)";
+            wrapper.style.textAlign = "center";
+
+            wrapper.appendChild(createPdfControls(pdf));
+            pdfContainer.appendChild(wrapper);
+        });
+
+        // Embed metabolite spectra directly under the LCModel outputs (side-by-side)
+        if (result.edited_spectra_html || result.no_edit_spectra_html) {
+            const spectraSection = document.createElement('div');
+            spectraSection.style.margin = "2em auto";
+            spectraSection.style.maxWidth = "95%";
+            spectraSection.style.backgroundColor = "#ffffff";
+            spectraSection.style.borderRadius = "8px";
+            spectraSection.style.boxShadow = "0 0 15px rgba(0, 0, 0, 0.1)";
+            spectraSection.style.padding = "1em";
+
+            const title = document.createElement('h2');
+            title.innerText = "METABOLITE SPECTRA";
+            title.style.textAlign = "center";
+            title.style.color = "#223D70";
+            title.style.marginBottom = "1em";
+            spectraSection.appendChild(title);
+
+            const row = document.createElement('div');
+            row.style.display = "flex";
+            row.style.gap = "20px";
+            row.style.justifyContent = "center";
+            row.style.flexWrap = "wrap";
+
+            const items = [
+                { label: "EDITED", file: result.edited_spectra_html },
+                { label: "NON-EDITED", file: result.no_edit_spectra_html },
+            ].filter(x => !!x.file);
+
+            items.forEach(({ label, file }) => {
+                const box = document.createElement('div');
+                box.style.flex = "1 1 48%";
+                box.style.minWidth = "400px";
+
+                const h3 = document.createElement('h3');
+                h3.innerText = label;
+                h3.style.textAlign = "center";
+                h3.style.color = "#264766";
+                h3.style.marginBottom = "10px";
+                box.appendChild(h3);
+
+                const iframe = document.createElement('iframe');
+                iframe.src = `/report/${file}`;
+                Object.assign(iframe.style, {
+                    width: "100%",
+                    height: "650px",
+                    border: "1px solid #ccc",
+                    borderRadius: "8px",
+                });
+                box.appendChild(iframe);
+
+                row.appendChild(box);
+            });
+
+            spectraSection.appendChild(row);
+            pdfContainer.appendChild(spectraSection);
+        }
+
+        if (result.report || (result.report_files && result.report_files.length > 0)) {
+            const reportContainer = document.getElementById("report-container");
+            const pngFile = result.report_files?.find(f => f.toLowerCase().endsWith('.png'));
+            const reportFileName = result.report?.split('/').pop();
+
+            reportContainer.innerHTML = '';
+
+            const wrapper = document.createElement('div');
+            Object.assign(wrapper.style, {
+                margin: "2em auto",
+                maxWidth: "1000px",
+                padding: "1em",
+                backgroundColor: "#ffffff",
+                borderRadius: "8px",
+                boxShadow: "0 0 15px rgba(0, 0, 0, 0.1)",
+                textAlign: "center"
+            });
+
+            // Embed HTML report if available
+            if (result.report && reportFileName) {
+                const iframe = document.createElement("iframe");
+                iframe.src = `/report/${reportFileName}`; 
+                Object.assign(iframe.style, {
+                    width: "100%",
+                    height: "600px",
+                    border: "1px solid #ccc",
+                    borderRadius: "8px",
+                    marginBottom: "20px"
+                });
+                wrapper.appendChild(iframe);
+            }
+
+            // Download links
+            const downloadArea = document.createElement('div');
+            downloadArea.style.marginTop = "10px";
+
+            if (reportFileName) {
+                const htmlDownloadLink = document.createElement('a');
+                htmlDownloadLink.href = `/report/${reportFileName}`;
+                htmlDownloadLink.download = reportFileName;
+                htmlDownloadLink.innerText = "Download Report (HTML)";
+                Object.assign(htmlDownloadLink.style, {
+                    display: "inline-block",
+                    marginRight: "10px",
+                    padding: "8px 16px",
+                    backgroundColor: "#223D70",
+                    color: "#fff",
+                    borderRadius: "5px",
+                    textDecoration: "none"
+                });
+                downloadArea.appendChild(htmlDownloadLink);
+            }
+
+            if (pngFile) {
+                const pngDownloadLink = document.createElement('a');
+                pngDownloadLink.href = `/report/${pngFile}`;
+                pngDownloadLink.download = pngFile;
+                pngDownloadLink.innerText = "Download Report (PNG)";
+                Object.assign(pngDownloadLink.style, {
+                    display: "inline-block",
+                    padding: "8px 16px",
+                    backgroundColor: "#223D70",
+                    color: "#fff",
+                    borderRadius: "5px",
+                    textDecoration: "none"
+                });
+                downloadArea.appendChild(pngDownloadLink);
+            }
+
+            wrapper.appendChild(downloadArea);
+
+            // List all report files
+            if (result.report_files && result.report_files.length > 0) {
+                const fileList = document.createElement('div');
+                fileList.style.marginTop = "20px";
+
+                result.report_files.forEach(file => {
+                    const link = document.createElement('a');
+                    link.href = `/report/${file}`;
+                    link.innerText = `Download ${file}`;
+                    Object.assign(link.style, {
+                        display: "block",
+                        marginBottom: "6px",
+                        textDecoration: "underline",
+                        color: "#223D70"
+                    });
+                    fileList.appendChild(link);
+                });
+
+                wrapper.appendChild(fileList);
+            }
+
+            reportContainer.appendChild(wrapper);
+        }
+
+        const promptContainer = document.getElementById('classifier-prompt');
+        promptContainer.innerHTML = '';
+        
+        const proceedBtn = document.createElement('button');
+        proceedBtn.innerText = "Proceed to Classifier";
+        proceedBtn.className = "run_button";
+
+        const lcmodelFiles = (result.lcmodel_files || []);
+        const encodedFiles = encodeURIComponent(JSON.stringify(lcmodelFiles));
+
+        proceedBtn.onclick = () => {
+            window.location.href = `/static/classifier.html?user_folder=${userFolder}&lcmodel_files=${encodedFiles}`;
+        };
+
+        promptContainer.appendChild(proceedBtn);
+    }
+
     const formData = new FormData();
     const monoBtn = document.getElementById("monoBtn");
     const multiBtn = document.getElementById("multiBtn");
@@ -455,268 +902,135 @@ async function runPipeline(event) {
             ? monoWaterFiles
             : Array.from(waterDcmFileInput.files).filter(f => isDcmFileName(f.name)).map(f => ({ relPath: f.webkitRelativePath || f.name, file: f }));
 
-        // Use relPath as the uploaded filename to preserve folder grouping and avoid collisions.
-        dcmFiles.forEach(({ file, relPath }) => formData.append('dcmFiles', file, relPath));
-        waterDcmFiles.forEach(({ file, relPath }) => formData.append('waterDcmFiles', file, relPath));
+        // IMPORTANT: When there are many files, server-side multipart parsing can become extremely slow.
+        // Package the selection into a single tar(.gz) archive to keep the request to 1-2 parts.
+        const outputEl = document.getElementById('output');
+
+        const fidArchive = await buildTarGzFromItems(dcmFiles, (msg) => {
+            if (outputEl) outputEl.innerText = msg;
+        });
+        formData.append('archive', fidArchive.blob, fidArchive.filename.replace(/^upload\./, 'fid_upload.'));
+
+        if (waterDcmFiles.length > 0) {
+            const waterArchive = await buildTarGzFromItems(waterDcmFiles, (msg) => {
+                if (outputEl) outputEl.innerText = `Water: ${msg}`;
+            });
+            formData.append('water_archive', waterArchive.blob, waterArchive.filename.replace(/^upload\./, 'water_upload.'));
+        }
     } else if (multiBtn.classList.contains("active")) {
         const directoryFiles = (multiFolderFiles.length > 0)
             ? multiFolderFiles
             : Array.from(directoryInput.files).filter(f => isDcmFileName(f.name)).map(f => ({ relPath: f.webkitRelativePath || f.name, file: f }));
 
-        directoryFiles.forEach(({ file, relPath }) => formData.append('directoryFiles', file, relPath));
+        // For large MULTI uploads, packaging into a single archive avoids extremely slow server-side
+        // multipart parsing when there are many parts.
+        const outputEl = document.getElementById('output');
+        const { blob, filename } = await buildTarGzFromItems(directoryFiles, (msg) => {
+            if (outputEl) outputEl.innerText = msg;
+        });
+        formData.append('archive', blob, filename);
     }
 
     try {
         formData.append("datatype", selectedDatatype);  
 
-        const response = await fetch("/run-processing", {
-            method: "POST",
-            body: formData,
+        const startedAt = Date.now();
+        appendOutputLine("Uploading files...");
+
+        const resp = await postFormDataWithProgress('/run-processing', formData, ({ loaded, total }) => {
+            const elapsed = Math.max(1, (Date.now() - startedAt) / 1000);
+            const mbLoaded = (loaded / (1024 * 1024));
+            const speed = mbLoaded / elapsed;
+            if (total) {
+                const pct = Math.round((loaded / total) * 100);
+                const mbTotal = (total / (1024 * 1024));
+                setWorking(true, `Uploading... ${pct}% (${mbLoaded.toFixed(1)} / ${mbTotal.toFixed(1)} MB) @ ${speed.toFixed(1)} MB/s`);
+            } else {
+                setWorking(true, `Uploading... ${(mbLoaded).toFixed(1)} MB sent @ ${speed.toFixed(1)} MB/s`);
+            }
         });
 
-
-        const result = await response.json();
-        const userFolder = result.user_folder?.replace(/^users\//, '') || '';
-
-
-        if (response.ok) {
-            console.log("Pipeline output:", result.output);
-            alert("Pipeline ran successfully!");
-
-            // Update a div or another element with the results
-            document.getElementById('output').innerText = result.output;
-
-            // Display PDFs
-            const pdfContainer = document.getElementById('pdf-container');
-            pdfContainer.innerHTML = '';
-            
-            if (!result.pdfs || result.pdfs.length === 0) {
-                pdfContainer.innerHTML = "<p>No PDF output found.</p>";
-                return;
-            }
-
-            const megaDiff = result.pdfs.find(p => p.startsWith("mega_diff/"));
-            const megaOff = result.pdfs.find(p => p.startsWith("mega_off/"));
-
-            // 🧠 Handle MEGA DIFF + MEGA OFF side-by-side
-            if (megaDiff || megaOff) {
-                const megaSection = document.createElement('div');
-                megaSection.style.margin = "2em auto";
-                megaSection.style.maxWidth = "95%";
-                megaSection.style.backgroundColor = "#ffffff";
-                megaSection.style.borderRadius = "8px";
-                megaSection.style.boxShadow = "0 0 15px rgba(0, 0, 0, 0.1)";
-                megaSection.style.padding = "1em";
-
-                const title = document.createElement('h2');
-                title.innerText = "MEGA PRESS LCMODEL OUTPUTS";
-                title.style.textAlign = "center";
-                title.style.color = "#223D70";
-                title.style.marginBottom = "1em";
-                megaSection.appendChild(title);
-
-                const row = document.createElement('div');
-                row.style.display = "flex";
-                row.style.gap = "20px";
-                row.style.justifyContent = "center";
-                row.style.flexWrap = "wrap";
-
-                [megaDiff, megaOff].forEach((pdf, i) => {
-                    if (pdf) {
-                        const box = document.createElement('div');
-                        box.style.flex = "1 1 48%";
-                        box.style.minWidth = "400px";
-
-                        const label = document.createElement('h3');
-                        label.innerText = pdf.startsWith("mega_diff") ? "MEGA DIFF" : "MEGA OFF";
-                        label.style.textAlign = "center";
-                        label.style.color = "#264766";
-                        label.style.marginBottom = "10px";
-
-                        box.appendChild(label);
-                        box.appendChild(createPdfControls(pdf));
-
-                        row.appendChild(box);
-
-                        // Add associated files list + download all
-                        const downloadBox = document.createElement('div');
-                        downloadBox.style.margin = "10px auto";
-                        downloadBox.style.padding = "10px";
-                        downloadBox.style.backgroundColor = "#E3E9EF";
-                        downloadBox.style.borderRadius = "6px";
-                        downloadBox.style.boxShadow = "0 0 8px rgba(0,0,0,0.05)";
-
-
-                        const downloadAll = document.createElement('a');
-                        downloadAll.href = `/download-mega/${pdf.startsWith("mega_diff") ? "mega_diff" : "mega_off"}`;
-                        downloadAll.innerText = "Download all related files (.CONTROL/.COORD/.PDF/.PLOTIN/.PRINT/.PS/.RAW)";
-                        downloadAll.style.display = "inline-block";
-                        downloadAll.style.marginTop = "10px";
-                        downloadAll.style.padding = "8px 16px";
-                        downloadAll.style.backgroundColor = "#223D70";
-                        downloadAll.style.color = "#fff";
-                        downloadAll.style.borderRadius = "5px";
-                        downloadAll.style.textDecoration = "none";
-
-                        downloadBox.appendChild(downloadAll);
-                        box.appendChild(downloadBox);
-
-                    }
-
- 
-                });
-
-
-                megaSection.appendChild(row);
-                pdfContainer.appendChild(megaSection);
-            }
-
-
-
-            //  Handle other PDFs
-            result.pdfs.forEach((pdf) => {
-                if (pdf.startsWith("mega_diff/") || pdf.startsWith("mega_off/")) return;
-
-                const wrapper = document.createElement('div');
-                wrapper.style.margin = "2em auto";
-                wrapper.style.maxWidth = "1000px";
-                wrapper.style.padding = "1em";
-                wrapper.style.backgroundColor = "#ffffff";
-                wrapper.style.borderRadius = "8px";
-                wrapper.style.boxShadow = "0 0 15px rgba(0, 0, 0, 0.1)";
-                wrapper.style.textAlign = "center";
-
-                wrapper.appendChild(createPdfControls(pdf));
-                pdfContainer.appendChild(wrapper);
-                
-
-            });
-            
-            if (result.report || (result.report_files && result.report_files.length > 0)) {
-                const reportContainer = document.getElementById("report-container");
-                const pngFile = result.report_files?.find(f => f.toLowerCase().endsWith('.png'));
-                const reportFileName = result.report?.split('/').pop();
-
-                reportContainer.innerHTML = '';
-
-                const wrapper = document.createElement('div');
-                Object.assign(wrapper.style, {
-                    margin: "2em auto",
-                    maxWidth: "1000px",
-                    padding: "1em",
-                    backgroundColor: "#ffffff",
-                    borderRadius: "8px",
-                    boxShadow: "0 0 15px rgba(0, 0, 0, 0.1)",
-                    textAlign: "center"
-                });
-
-                // Embed HTML report if available
-                if (result.report && reportFileName) {
-                    const iframe = document.createElement("iframe");
-                    iframe.src = `/report/${reportFileName}`; 
-                    Object.assign(iframe.style, {
-                        width: "100%",
-                        height: "600px",
-                        border: "1px solid #ccc",
-                        borderRadius: "8px",
-                        marginBottom: "20px"
-                    });
-                    wrapper.appendChild(iframe);
-                }
-
-                // Download links
-                const downloadArea = document.createElement('div');
-                downloadArea.style.marginTop = "10px";
-
-                if (reportFileName) {
-                    const htmlDownloadLink = document.createElement('a');
-                    htmlDownloadLink.href = `/report/${reportFileName}`;
-                    htmlDownloadLink.download = reportFileName;
-                    htmlDownloadLink.innerText = "Download Report (HTML)";
-                    Object.assign(htmlDownloadLink.style, {
-                        display: "inline-block",
-                        marginRight: "10px",
-                        padding: "8px 16px",
-                        backgroundColor: "#223D70",
-                        color: "#fff",
-                        borderRadius: "5px",
-                        textDecoration: "none"
-                    });
-                    downloadArea.appendChild(htmlDownloadLink);
-                }
-
-                if (pngFile) {
-                    const pngDownloadLink = document.createElement('a');
-                    pngDownloadLink.href = `/report/${pngFile}`;
-                    pngDownloadLink.download = pngFile;
-                    pngDownloadLink.innerText = "Download Report (PNG)";
-                    Object.assign(pngDownloadLink.style, {
-                        display: "inline-block",
-                        padding: "8px 16px",
-                        backgroundColor: "#223D70",
-                        color: "#fff",
-                        borderRadius: "5px",
-                        textDecoration: "none"
-                    });
-                    downloadArea.appendChild(pngDownloadLink);
-                }
-
-                wrapper.appendChild(downloadArea);
-
-                // List all report files
-                if (result.report_files && result.report_files.length > 0) {
-                    const fileList = document.createElement('div');
-                    fileList.style.marginTop = "20px";
-
-                    result.report_files.forEach(file => {
-                        const link = document.createElement('a');
-                        link.href = `/report/${file}`;
-                        link.innerText = `Download ${file}`;
-                        Object.assign(link.style, {
-                            display: "block",
-                            marginBottom: "6px",
-                            textDecoration: "underline",
-                            color: "#223D70"
-                        });
-                        fileList.appendChild(link);
-                    });
-
-                    wrapper.appendChild(fileList);
-                }
-
-                reportContainer.appendChild(wrapper);
-            }
-
-
-
-
-            const promptContainer = document.getElementById('classifier-prompt');
-            promptContainer.innerHTML = '';
-            
-            const proceedBtn = document.createElement('button');
-            proceedBtn.innerText = "Proceed to Classifier";
-            proceedBtn.className = "run_button";
-
-            // Collect all LCModel files (.COORD, .PRINT, etc.) from MEGA OFF and MEGA DIFF
-            const lcmodelFiles = (result.lcmodel_files || []);
-            const encodedFiles = encodeURIComponent(JSON.stringify(lcmodelFiles));
-
-            proceedBtn.onclick = () => {
-                window.location.href = `/static/classifier.html?user_folder=${userFolder}&lcmodel_files=${encodedFiles}`;
-            };
-
-            promptContainer.appendChild(proceedBtn);
-
-        } else {
-            console.error("Error running pipeline:", result.message);
-            alert("Error running pipeline: " + result.message);
-            document.getElementById('logs').innerText = result.logs;
+        const responseOk = resp.ok;
+        const result = resp.json;
+        if (!responseOk) {
+            setWorking(false);
+            console.error("Error running pipeline:", result?.message);
+            alert("Error running pipeline: " + (result?.message || 'Unknown error'));
+            appendOutputLine("Error running pipeline: " + (result?.message || 'Unknown error'));
+            return;
         }
+
+        // Async job path: stream logs in real time via SSE.
+        if (result && result.status === 'started' && result.job_id) {
+            const jobId = result.job_id;
+            const eventsUrl = result.events_url || `/processing-events/${jobId}`;
+
+            appendOutputLine(`Upload complete. Streaming logs from backend...`);
+            setWorking(true, 'Processing...');
+
+            const es = new EventSource(eventsUrl);
+            const uiStart = Date.now();
+            let jobStartedAt = null;
+
+            es.addEventListener('meta', (evt) => {
+                try {
+                    const meta = JSON.parse(evt.data || '{}');
+                    if (meta.started_at) jobStartedAt = meta.started_at;
+                } catch (e) {
+                    // ignore
+                }
+            });
+
+            es.addEventListener('log', (evt) => {
+                try {
+                    const payload = JSON.parse(evt.data || '{}');
+                    const t = payload.t || (Date.now() / 1000);
+                    const msg = payload.message || '';
+                    const elapsed = jobStartedAt ? (t - jobStartedAt) : ((Date.now() - uiStart) / 1000);
+                    appendOutputLine(`[${formatElapsed(elapsed)}] ${msg}`);
+                    setWorking(true, `Processing... (${formatElapsed(elapsed)})`);
+                } catch (e) {
+                    appendOutputLine(String(evt.data || ''));
+                }
+            });
+
+            es.addEventListener('job_error', (evt) => {
+                setWorking(false);
+                try {
+                    const payload = JSON.parse(evt.data || '{}');
+                    appendOutputLine(`ERROR: ${payload.message || 'Unknown error'}`);
+                    alert("Error running pipeline: " + (payload.message || 'Unknown error'));
+                } catch (e) {
+                    appendOutputLine('ERROR: Processing failed.');
+                    alert("An error occurred while running the pipeline.");
+                }
+                es.close();
+            });
+
+            es.addEventListener('done', (evt) => {
+                setWorking(false);
+                es.close();
+                try {
+                    const payload = JSON.parse(evt.data || '{}');
+                    const finalResult = payload.result;
+                    handleProcessingResult(finalResult);
+                } catch (e) {
+                    appendOutputLine('Completed, but failed to parse final result.');
+                }
+            });
+
+            return;
+        }
+
+        // Backward compatible path: server returned final result immediately.
+        setWorking(false);
+        handleProcessingResult(result);
 
     } catch (error) {
         console.error("Error:", error);
+        setWorking(false);
         alert("An error occurred while running the pipeline.");
-        document.getElementById('logs').innerText = error.message;
+        appendOutputLine(error.message);
     }
 
 }

@@ -555,6 +555,9 @@ function addDownloadButtons(section, content, filename) {
 
 document.addEventListener('DOMContentLoaded', async () => {
     showSection('classifier');
+    if (window.AOS && typeof window.AOS.refreshHard === 'function') {
+        window.AOS.refreshHard();
+    }
 
     const params = new URLSearchParams(window.location.search);
     const userFolder = params.get("user_folder");

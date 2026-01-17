@@ -402,9 +402,11 @@ def run_processing():
                 _job_emit(job_id, "   Streaming progress output below:\n")
 
                 script_path = os.path.join(os.path.dirname(__file__), 'glioma_mrs_preprocessing', 'MRS_process.py')
-                cmd = [sys.executable, '-u', script_path, ' '.join(dcm_paths)]
+                # IMPORTANT: pass paths as proper argv items.
+                # Joining paths with spaces breaks when any folder/file contains spaces or special chars.
+                cmd = [sys.executable, '-u', script_path, '--dcm', *dcm_paths]
                 if water_dcm_paths:
-                    cmd.append(' '.join(water_dcm_paths))
+                    cmd.extend(['--water', *water_dcm_paths])
 
                 stdout_lines: list[str] = []
                 stderr_lines: list[str] = []
@@ -565,6 +567,18 @@ def run_processing():
                     'edited_spectra_html': edited_spectra_html,
                     'no_edit_spectra_html': no_edit_spectra_html,
                 }
+
+                # Convenience URLs for the UI (served by /report/<filename> route).
+                try:
+                    if preferred is not None:
+                        response_data['report_url'] = f"/report/{preferred}"
+                    if edited_spectra_html:
+                        response_data['edited_spectra_url'] = f"/report/{edited_spectra_html}"
+                    if no_edit_spectra_html:
+                        response_data['no_edit_spectra_url'] = f"/report/{no_edit_spectra_html}"
+                    response_data['report_files_urls'] = [f"/report/{name}" for name in (report_files or [])]
+                except Exception:
+                    pass
 
                 if not pdf_files and report_main_html:
                     response_data['message'] = "Processing completed (report generated but no PDFs found)"

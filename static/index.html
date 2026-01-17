@@ -3,33 +3,209 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Run Python Script</title>
+    <title>MRS Processing & Classifier</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+
+    <!-- Bootstrap + Icons + AOS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/aos@2.3.4/dist/aos.css" />
+
     <link rel="stylesheet" href="/static/styles.css">
     <meta name="description" content="IDH MRS Classifier for analyzing and predicting medical data.">
     <meta name="keywords" content="IDH, MRS, Classifier, medical data, prediction, brain institute, paris brain institute, glioma">
     <meta name="author" content="Capucine Cadin, Valentin Cadin">
 </head>
 <body>
-    <header>
-        <div class="container">
-            <!-- Logo -->
-            <img src="/static/img/paris_institute_of_brain_logo.png" alt="Logo">
+    <nav class="navbar navbar-expand-lg py-3">
+        <div class="container-xl">
+            <a class="navbar-brand d-flex align-items-center gap-2" href="/static/index.html">
+                <span class="brand-logo brand-logo-mask" aria-label="Paris Brain Institute"></span>
+                <img class="brand-logo-img" src="/static/img/paris_institute_of_brain_logo.png" alt="Paris Brain Institute" />
+            </a>
 
-            <!-- Title -->
-            <h1>Magnetic Resonance Spectroscopy Tool</h1>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarMain">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center gap-lg-1">
+                    <li class="nav-item"><a class="nav-link" href="/static/mrs-processing.html">Processing</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/static/classifier.html">Classifier</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/static/research.html">Research</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/static/team.html">Team</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/static/contact.html">Contact</a></li>
+                    <li class="nav-item ms-lg-2">
+                        <button id="themeToggle" type="button" class="btn btn-sm btn-outline-viridis" aria-label="Toggle theme">
+                            <i class="bi bi-moon-stars-fill"></i>
+                            <span class="d-none d-sm-inline ms-2">Dark</span>
+                        </button>
+                    </li>
+                </ul>
+            </div>
         </div>
-        <nav>
-            <ul>
-                <li><a href="/static/mrs-processing.html" class="nav-button unpressed">MRS Processing</a></li>
-                <li><a href="/static/classifier.html" class="nav-button unpressed">Classifier</a></li>
-            </ul>
-        </nav>
-    </header>
+    </nav>
 
-    <footer>
-        <div class="container">
-            <p>&copy; 2025 Paris Brain Institute. All rights reserved.</p>
+    <main class="pb-0">
+        <!-- HERO (minimal info, designed for first screen) -->
+        <section class="band band-hero" data-aos="fade-up">
+            <div class="band-inner">
+                <div class="row">
+                    <div class="col-12 col-xl-7">
+                        <p class="text-uppercase fw-semibold mb-2" style="letter-spacing:.12em; color: var(--muted);">Research prototype</p>
+                        <h1 class="hero-title hero-title-arial mb-3">Magnetic Resonance Spectroscopy tool for MEGA‑PRESS processing and molecular status prediction for gliomas</h1>
+                        <p class="hero-subtitle mb-4">
+                            Automatic MRS preprocessing and diagnostic support (currently adapted for gliomas), designed to democratize spectroscopy analysis for broad research and molecular characterization in complex neuropathologies.
+                        </p>
+
+                         <!-- <div class="d-flex flex-wrap gap-2">
+                            <a class="btn btn-viridis btn-lg" href="/static/mrs-processing.html">
+                                <i class="bi bi-rocket-takeoff me-2"></i>
+                                Run processing
+                            </a>
+                            <a class="btn btn-outline-viridis btn-lg" href="/static/classifier.html">
+                                <i class="bi bi-activity me-2"></i>
+                                Open classifier
+                            </a>
+                        </div> -->
+
+                        <div class="mt-3 small" style="color: var(--muted);">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            Not for clinical use. Research / education only.
+                        </div>
+
+                        <div class="mt-5">
+                            <a class="scroll-hint" href="#features" aria-label="Scroll to learn more">
+                                <i class="bi bi-chevron-down"></i>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="d-none d-xl-block col-xl-5">
+                        <div class="surface p-4 p-xxl-5 h-100" style="box-shadow:none; background: rgba(255,255,255,0.22); border-style: solid;">
+                            <h2 class="h5 mb-3">At a glance</h2>
+                            <ul class="mb-0" style="color: var(--muted);">
+                                <li class="mb-2">MEGA‑PRESS preprocessing with quality checks</li>
+                                <li class="mb-2">Reports saved as HTML + text-only PNG</li>
+                                <li>Classifier for IDH & 1p/19q (from LCModel outputs)</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- QUICK START -->
+        <section class="band band-quickstart" data-aos="fade-up" data-aos-delay="60">
+            <div class="band-inner">
+                <div class="row justify-content-center">
+                    <div class="col-12 col-xl-9 text-center">
+                        <div class="surface p-4 p-lg-5" style="box-shadow:none; background: rgba(255,255,255,0.35); border-style: dashed;">
+                            <h2 class="h4 mb-3">Quick start</h2>
+                            <ol class="mb-0" style="color: var(--muted);">
+                                <li class="mb-2" data-feature="processing">Open <strong>Processing</strong> and upload your anonymized MEGA-PRESS .dcm files.</li>
+                                <li class="mb-2" data-feature="processing">Get your quantified processed spectra from LCModel.</li>
+                                <li data-feature="classifier">Run <strong>Classifier</strong> using LCModel outputs.</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FEATURES -->
+        <section id="features" class="band band-features" data-aos="fade-up" data-aos-delay="40">
+            <div class="band-inner">
+                <div class="row g-3">
+                    <div class="col-lg-6">
+                        <div class="surface feature-card p-4 h-100" data-feature="processing">
+                            <div class="d-flex flex-column align-items-center text-center gap-3">
+                                <div><img class="feature-icon" src="/static/img/spectra.svg" alt="Spectra icon"></div>
+                                <div>
+                                    <h2 class="h4 mb-2">Processing pipeline</h2>
+                                    <p class="mb-3" style="color: var(--muted);">MEGA‑PRESS preprocessing with quality checks and downloadable reports.</p>
+                                        <a class="btn btn-viridis-start btn-lg" href="/static/mrs-processing.html">Run processing</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="surface feature-card p-4 h-100" data-feature="classifier">
+                            <div class="d-flex flex-column align-items-center text-center gap-3">
+                                <div><span class="feature-icon-mask feature-icon-end" aria-hidden="true"></span></div>
+                                <div>
+                                    <h2 class="h4 mb-2">IDH & 1p/19q classifier</h2>
+                                    <p class="mb-3" style="color: var(--muted);">Upload LCModel outputs (.COORD/.PRINT) and view predictions + SHAP.</p>
+                                    <div class="d-flex justify-content-center">
+                                        <a class="btn btn-viridis-end btn-lg" href="/static/classifier.html">Open classifier</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+
+        <!-- COLLABORATORS -->
+        <section class="band band-collaborators" data-aos="fade-up" data-aos-delay="80">
+            <div class="band-inner">
+                <div class="d-flex align-items-end justify-content-between gap-3 mb-3">
+                    <div>
+                        <h2 class="h3 mb-1">Collaborators</h2>
+                        <div style="color: var(--muted);">A multicentric collaboration across hospitals and labs.</div>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-6 col-md-4 col-xl-3"><div class="collab-tile">Partner</div></div>
+                    <div class="col-6 col-md-4 col-xl-3"><div class="collab-tile">Partner</div></div>
+                    <div class="col-6 col-md-4 col-xl-3"><div class="collab-tile">Partner</div></div>
+                    <div class="col-6 col-md-4 col-xl-3"><div class="collab-tile">Partner</div></div>
+                    <div class="col-6 col-md-4 col-xl-3"><div class="collab-tile">Partner</div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- COLLABORATION CTA -->
+        <section class="band band-cta" data-aos="fade-up" data-aos-delay="100">
+            <div class="band-inner">
+                <div class="cta-band p-4 p-lg-5">
+                    <div class="row align-items-center g-3">
+                        <div class="col-lg-8">
+                            <h2 class="h4 mb-2">Interested in collaborating on a multicentric spectroscopy study?</h2>
+                            <p class="mb-0" style="color: var(--muted);">
+                                We welcome clinicians, medical doctors, and researchers. If you have MEGA‑PRESS MRS data or want to contribute to multicenter validation, reach out.
+                            </p>
+                        </div>
+                        <div class="col-lg-4 d-flex justify-content-lg-end">
+                            <a class="btn btn-viridis" href="/static/contact.html"><i class="bi bi-envelope me-2"></i>Contact / collaborate</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="py-4">
+        <div class="container-xl d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2">
+            <div class="small">&copy; 2026 Paris Brain Institute. All rights reserved.</div>
+            <div class="small">
+                <a class="text-decoration-none" href="/static/contact.html">Contact</a>
+                <span class="mx-2">·</span>
+                <a class="text-decoration-none" href="/static/research.html">Research</a>
+            </div>
         </div>
     </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.4/dist/aos.js"></script>
+    <script src="/static/utils.js"></script>
 </body>
 </html>

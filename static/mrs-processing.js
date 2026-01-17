@@ -767,6 +767,44 @@ async function runPipeline(event) {
                 });
                 box.appendChild(iframe);
 
+                // Download/open controls for the interactive HTML plot
+                const controls = document.createElement('div');
+                controls.style.marginTop = "10px";
+                controls.style.textAlign = "center";
+
+                const downloadLink = document.createElement('a');
+                downloadLink.href = `/report/${file}`;
+                downloadLink.download = file;
+                downloadLink.innerText = "Download plot (HTML)";
+                Object.assign(downloadLink.style, {
+                    display: "inline-block",
+                    marginRight: "10px",
+                    padding: "8px 16px",
+                    backgroundColor: "#223D70",
+                    color: "#fff",
+                    borderRadius: "5px",
+                    textDecoration: "none"
+                });
+
+                const openLink = document.createElement('a');
+                openLink.href = `/report/${file}`;
+                openLink.target = "_blank";
+                openLink.rel = "noopener";
+                openLink.innerText = "Open in new tab";
+                Object.assign(openLink.style, {
+                    display: "inline-block",
+                    padding: "8px 16px",
+                    backgroundColor: "#E3E9EF",
+                    color: "#223D70",
+                    borderRadius: "5px",
+                    textDecoration: "none",
+                    border: "1px solid rgba(34, 61, 112, 0.25)"
+                });
+
+                controls.appendChild(downloadLink);
+                controls.appendChild(openLink);
+                box.appendChild(controls);
+
                 row.appendChild(box);
             });
 

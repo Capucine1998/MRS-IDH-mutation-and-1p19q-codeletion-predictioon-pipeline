@@ -1,34 +1,241 @@
 /* styles.css */
 
+/*
+    Modern UI foundation (Bootstrap-friendly)
+    - Uses CSS variables to support light/dark modes
+    - Keeps a viridis-inspired accent palette
+*/
+
+:root {
+        --font-sans: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+        --font-display: "Playfair Display", ui-serif, Georgia, serif;
+
+        /* Viridis-inspired accents */
+        --v-purple: #440154;
+        --v-blue: #3b528b;
+        --v-teal: #21918c;
+        --v-green: #5ec962;
+        --v-yellow: #fde725;
+
+        /* Light theme */
+        --bg: #f7fafc;
+        --bg-elev: rgba(255, 255, 255, 0.88);
+        --bg-elev-solid: #ffffff;
+        --text: #0f172a;
+        --muted: #475569;
+        --border: rgba(15, 23, 42, 0.12);
+        --shadow: 0 16px 40px rgba(2, 6, 23, 0.10);
+
+        --brand: #223D70;
+        --brand-2: var(--v-teal);
+        --accent: var(--v-green);
+
+        --card-radius: 16px;
+        --focus: rgba(33, 145, 140, 0.25);
+
+        --page-gradient: radial-gradient(1200px 700px at 20% 0%, rgba(33,145,140,0.20), transparent 60%),
+                radial-gradient(900px 600px at 85% 10%, rgba(59,82,139,0.18), transparent 55%),
+                radial-gradient(900px 650px at 60% 90%, rgba(94,201,98,0.18), transparent 60%),
+                linear-gradient(180deg, #f7fafc, #eef2ff);
+}
+
+html[data-theme="dark"] {
+        --bg: #0b1220;
+        --bg-elev: rgba(17, 24, 39, 0.72);
+        --bg-elev-solid: #0f172a;
+        --text: #e5e7eb;
+        --muted: #a1a1aa;
+        --border: rgba(226, 232, 240, 0.14);
+        --shadow: 0 18px 50px rgba(0, 0, 0, 0.40);
+
+        --brand: #9fb7ff;
+        --brand-2: #7de7de;
+        --accent: #a6ff9a;
+
+        --focus: rgba(253, 231, 37, 0.20);
+        --page-gradient: radial-gradient(1200px 700px at 20% 0%, rgba(33,145,140,0.18), transparent 60%),
+                radial-gradient(900px 600px at 85% 10%, rgba(68,1,84,0.30), transparent 55%),
+                radial-gradient(900px 650px at 60% 90%, rgba(94,201,98,0.14), transparent 60%),
+                linear-gradient(180deg, #050815, #0b1220);
+}
+
 /* Reset and base styles */
 body {
-    font-family: Arial, sans-serif;
+    font-family: var(--font-sans);
     margin: 0;
     padding: 0;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
-    background: linear-gradient(to bottom right, #B5B8DE 25%, #f0f0f0 75%);
+    color: var(--text);
+    background: var(--page-gradient);
+    scroll-behavior: smooth;
 }
 
-.container {
-    max-width: 80%;
-    margin: 0 auto;
-    padding: 20px;
+/* Navbar styling */
+.navbar {
+    background: rgba(15, 23, 42, 0.02);
 }
 
-@media (max-width: 900px) {
-    .container {
-        max-width: 95%;
+html[data-theme="dark"] .navbar {
+    background: rgba(15, 23, 42, 0.35);
+    border-bottom: 1px solid rgba(226, 232, 240, 0.06);
+    backdrop-filter: blur(10px);
+}
+
+/* Brand logo (viridis gradient) */
+.brand-logo {
+    display: inline-block;
+    width: auto;
+    height: 56px;
+}
+
+.brand-logo-lg {
+    height: clamp(88px, 12vw, 148px);
+}
+
+.brand-logo-img {
+    height: 56px;
+    width: auto;
+    display: inline-block;
+}
+
+.brand-logo-img.brand-logo-lg {
+    height: clamp(88px, 12vw, 148px);
+}
+
+/* Gradient “tint” using CSS mask (works well even with a PNG that has alpha) */
+.brand-logo-mask {
+    display: none;
+    height: 56px;
+    width: 190px;
+    background: linear-gradient(90deg, var(--v-purple), var(--v-blue), var(--v-teal), var(--v-green), var(--v-yellow));
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: left center;
+    -webkit-mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: left center;
+    mask-size: contain;
+}
+
+.brand-logo-mask.brand-logo-lg {
+    height: clamp(88px, 12vw, 148px);
+    width: clamp(260px, 40vw, 520px);
+}
+
+@supports (-webkit-mask-image: url("/static/img/paris_institute_of_brain_logo.png")) or (mask-image: url("/static/img/paris_institute_of_brain_logo.png")) {
+    .brand-logo-mask {
+        display: inline-block;
+        -webkit-mask-image: url("/static/img/paris_institute_of_brain_logo.png");
+        mask-image: url("/static/img/paris_institute_of_brain_logo.png");
+    }
+    .brand-logo-img {
+        display: none;
     }
 }
 
+/* Hero (plain, not boxed) */
+.hero-plain {
+    padding: 2.5rem 0 1.25rem 0;
+}
+
+.hero-plain .hero-title {
+    font-size: clamp(2.2rem, 4vw, 3.4rem);
+    line-height: 1.04;
+}
+
+.hero-subtitle {
+    color: var(--muted);
+    font-size: 1.1rem;
+}
+
+/* Full-width scroll bands (homepage) */
+.band {
+    width: 100%;
+    padding: clamp(1.5rem, 3vw, 3rem) 0;
+    background: transparent;
+}
+
+.band-inner {
+    width: min(1240px, 100%);
+    margin: 0 auto;
+    padding: 0 clamp(1rem, 3vw, 2rem);
+}
+
+.band-hero {
+    min-height: clamp(22rem, 55vh, 38rem);
+    display: flex;
+    align-items: center;
+    background: transparent;
+}
+
+.band-features,
+.band-quickstart,
+.band-collaborators,
+.band-cta {
+    min-height: auto;
+    background: transparent;
+}
+
+.scroll-hint {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,0.10);
+    color: var(--text);
+    text-decoration: none;
+}
+
+html[data-theme="dark"] .scroll-hint {
+    background: rgba(15, 23, 42, 0.40);
+}
+
+/* Collaborators */
+.collab-tile {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 90px;
+    box-shadow: none;
+}
+
+/* CTA band */
+.cta-band {
+    border-radius: 22px;
+    border: 1px solid rgba(33,145,140,0.25);
+    background: linear-gradient(135deg, rgba(59,82,139,0.18), rgba(33,145,140,0.18), rgba(94,201,98,0.18));
+}
+
+html[data-theme="dark"] .cta-band {
+    border-color: rgba(125, 231, 222, 0.18);
+    background: linear-gradient(135deg, rgba(59,82,139,0.18), rgba(33,145,140,0.14), rgba(68,1,84,0.18));
+}
+
+/* Ensure the footer sits at the bottom on short pages */
+main {
+    flex: 1 0 auto;
+}
+
+footer {
+    margin-top: auto;
+}
+
+/* Do NOT override Bootstrap's .container sizing */
+.container { }
+
 /* Header styles */
 header {
-    background-color: #223D70;
-    color: #B6CCD8;
-    padding: 1em 0;
-    text-align: center;
+    background-color: transparent;
+    color: var(--text);
+    padding: 0;
     margin-bottom: 0;
 }
 
@@ -86,6 +293,159 @@ nav ul li {
     transition: background-color 0.3s ease;
     width: 150px; /* Ensure buttons are the same size */
     text-align: center;
+}
+
+/* Modern cards / surfaces */
+.surface {
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(10px);
+}
+
+/* Quick start hover -> feature card activation */
+.feature-card {
+    transition: box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease;
+}
+
+.feature-card.is-active {
+    box-shadow: 0 28px 70px rgba(33, 145, 140, 0.35);
+    border-color: rgba(33, 145, 140, 0.55);
+    transform: translateY(-8px);
+}
+
+.feature-icon {
+    height: clamp(52px, 6vw, 72px);
+    width: auto;
+    display: inline-block;
+}
+
+.feature-icon-mask {
+    display: inline-block;
+    height: clamp(52px, 6vw, 72px);
+    width: clamp(52px, 6vw, 72px);
+    background: linear-gradient(90deg, var(--v-green), var(--v-green), var(--v-yellow));
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+}
+
+.feature-icon-mask.feature-icon-end {
+    background: linear-gradient(90deg, var(--v-green), var(--v-green), var(--v-yellow));
+    -webkit-mask-image: url("/static/img/microscope3.svg");
+    mask-image: url("/static/img/microscope3.svg");
+}
+
+.hero-title {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+}
+
+.hero-title-arial {
+    font-family: Arial, var(--font-sans);
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--v-purple), var(--v-blue), var(--v-teal), var(--v-green), var(--v-yellow));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+.btn-viridis {
+    border: 0;
+    color: #06121a;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--v-teal), var(--v-green), var(--v-yellow));
+    box-shadow: 0 12px 30px rgba(33, 145, 140, 0.25);
+}
+
+/* Split viridis gradients for workflow buttons */
+.btn-viridis-start {
+    border: 0;
+    color: #000000;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--v-purple), var(--v-blue), var(--v-teal));
+    box-shadow: 0 12px 30px rgba(59, 82, 139, 0.28);
+}
+
+.btn-viridis-end {
+    border: 0;
+    color: #000000;
+    font-weight: 700;
+    background: linear-gradient(90deg, var(--v-green), var(--v-green), var(--v-yellow));
+    box-shadow: 0 12px 30px rgba(94, 201, 98, 0.28);
+}
+
+.btn-viridis-start:hover,
+.btn-viridis-end:hover {
+    color: #ffffff;
+}
+
+html[data-theme="dark"] .btn-viridis {
+    color: #031014;
+}
+
+.btn-viridis:hover {
+    filter: saturate(1.05) brightness(1.02);
+    transform: translateY(-1px);
+}
+
+.btn-outline-viridis {
+    border: 1px solid rgba(33,145,140,0.55);
+    color: var(--text);
+    background: transparent;
+}
+
+.btn-outline-viridis:hover {
+    border-color: rgba(94,201,98,0.8);
+    background: rgba(33,145,140,0.12);
+}
+
+/* Inputs focus */
+input:focus, button:focus, select:focus, textarea:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px var(--focus) !important;
+}
+
+/* Make legacy form blocks match theme */
+form,
+.form_fake {
+    background-color: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+}
+
+form label,
+.form_fake label,
+.working-text {
+    color: var(--text);
+}
+
+/* Log/output box */
+#output {
+    background: rgba(255, 255, 255, 0.65);
+}
+
+html[data-theme="dark"] #output {
+    background: rgba(15, 23, 42, 0.65);
+    color: var(--text);
+}
+
+.working-indicator {
+    background: rgba(255, 255, 255, 0.65);
+}
+
+html[data-theme="dark"] .working-indicator {
+    background: rgba(15, 23, 42, 0.65);
+}
+
+/* Footer */
+footer {
+    color: var(--muted);
 }
 
 .nav-button:hover {
@@ -390,17 +750,25 @@ button {
     border-color: #223D70;
 }
 
-/* Footer styles */
+/* Footer styles (match navbar aesthetic) */
 footer {
-    background-color: #223D70;
-    color: #ffffff;
-    padding: 1em 0;
-    text-align: center;
+    background: rgba(15, 23, 42, 0.02);
+    color: var(--text);
+    border-top: 1px solid rgba(15, 23, 42, 0.08);
 }
 
-footer p {
-    margin: 0;
-    font-size: 0.9em;
+html[data-theme="dark"] footer {
+    background: rgba(15, 23, 42, 0.35);
+    border-top: 1px solid rgba(226, 232, 240, 0.06);
+    backdrop-filter: blur(10px);
+}
+
+footer a {
+    color: var(--muted);
+}
+
+footer a:hover {
+    color: var(--text);
 }
 
 /* Responsive design */

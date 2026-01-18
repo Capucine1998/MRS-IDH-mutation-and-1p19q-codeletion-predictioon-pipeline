@@ -195,17 +195,121 @@ html[data-theme="dark"] .scroll-hint {
 }
 
 /* Collaborators */
+.collab-row {
+    justify-content: center;
+}
+
+.collab-col {
+    display: flex;
+    justify-content: center;
+}
+
 .collab-tile {
-    background: var(--bg-elev);
-    border: 1px solid var(--border);
+    background: transparent;
+    border: 1px solid transparent;
     border-radius: 18px;
     padding: 18px;
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 90px;
+    min-height: 120px;
     box-shadow: none;
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+    transition: background 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
 }
+
+.collab-tile:hover {
+    background: var(--bg-elev);
+    box-shadow: 0 14px 30px rgba(2, 6, 23, 0.10), 0 0 0 1px rgba(148, 163, 184, 0.08);
+    transform: translateY(-2px);
+}
+
+.collab-logo {
+    display: inline-block;
+    width: clamp(150px, 22vw, 220px);
+    height: clamp(56px, 8vw, 84px);
+}
+
+.collab-logo-img {
+    display: inline-block;
+    width: clamp(150px, 22vw, 220px);
+    height: auto;
+    max-height: clamp(56px, 8vw, 84px);
+}
+
+.collab-logo-mask {
+    display: none;
+    background: linear-gradient(90deg,
+        var(--v-purple) 0%,
+        var(--v-blue) 22%,
+        var(--v-teal) 44%,
+        var(--v-green) 66%,
+        var(--v-yellow) 88%,
+        var(--v-yellow) 100%
+    );
+    background-size: var(--collab-gradient-width, 100vw) 100%;
+    background-position: var(--collab-gradient-x, 0px) center;
+    filter: saturate(1.35) contrast(1.15);
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+}
+
+@supports (-webkit-mask-image: url("/static/img/ICM_logo.svg")) or (mask-image: url("/static/img/ICM_logo.svg")) {
+    .collab-logo-mask {
+        display: inline-block;
+    }
+
+    .collab-logo-img {
+        display: none;
+    }
+}
+
+.collab-logo-icm {
+    -webkit-mask-image: url("/static/img/ICM_logo.svg");
+    mask-image: url("/static/img/ICM_logo.svg");
+}
+
+.collab-logo-ottawa {
+    -webkit-mask-image: url("/static/img/ottawa_logo.svg");
+    mask-image: url("/static/img/ottawa_logo.svg");
+}
+
+.collab-logo-treviso {
+    -webkit-mask-image: url("/static/img/treviso_logo.svg");
+    mask-image: url("/static/img/treviso_logo.svg");
+}
+
+.collab-logo-salpetriere {
+    -webkit-mask-image: url("/static/img/salpetriere_logo.svg");
+    mask-image: url("/static/img/salpetriere_logo.svg");
+}
+
+.collab-logo-spedali {
+    -webkit-mask-image: url("/static/img/Spedali_civili_logo.svg");
+    mask-image: url("/static/img/Spedali_civili_logo.svg");
+}
+
+.collab-link {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-decoration: none;
+    color: inherit;
+    width: 100%;
+}
+
+.collab-name {
+    font-size: 0.95rem;
+    color: var(--muted);
+}
+
 
 /* CTA band */
 .cta-band {
@@ -302,6 +406,16 @@ nav ul li {
     border-radius: var(--card-radius);
     box-shadow: var(--shadow);
     backdrop-filter: blur(10px);
+}
+
+.contact-card {
+    box-shadow: 0 10px 24px rgba(2, 6, 23, 0.10);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.contact-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 36px rgba(2, 6, 23, 0.14);
 }
 
 /* Quick start hover -> feature card activation */

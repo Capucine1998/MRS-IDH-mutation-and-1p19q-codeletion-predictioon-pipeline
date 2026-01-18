@@ -125,8 +125,32 @@ function initQuickstartHover() {
     });
 }
 
+function initCollaboratorGradients() {
+    const logos = document.querySelectorAll('.collab-logo-mask');
+    if (!logos.length) {
+        return;
+    }
+
+    const update = () => {
+        logos.forEach(logo => {
+            const row = logo.closest('.row');
+            const rowRect = row ? row.getBoundingClientRect() : null;
+            const rect = logo.getBoundingClientRect();
+            const baseLeft = rowRect ? rowRect.left : 0;
+            const baseWidth = rowRect ? rowRect.width : (window.innerWidth || document.documentElement.clientWidth);
+            const x = -(rect.left - baseLeft);
+            logo.style.setProperty('--collab-gradient-width', `${baseWidth}px`);
+            logo.style.setProperty('--collab-gradient-x', `${x}px`);
+        });
+    };
+
+    update();
+    window.addEventListener('resize', update);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
     initAOS();
     initQuickstartHover();
+    initCollaboratorGradients();
 });

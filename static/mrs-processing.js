@@ -630,12 +630,7 @@ async function runPipeline(event) {
         // Handle MEGA DIFF + MEGA OFF side-by-side
         if (megaDiff || megaOff) {
             const megaSection = document.createElement('div');
-            megaSection.style.margin = "2em auto";
-            megaSection.style.maxWidth = "95%";
-            megaSection.style.backgroundColor = "#ffffff";
-            megaSection.style.borderRadius = "8px";
-            megaSection.style.boxShadow = "0 0 15px rgba(0, 0, 0, 0.1)";
-            megaSection.style.padding = "1em";
+            megaSection.className = "lcmodel-section output-card";
 
             const title = document.createElement('h2');
             title.innerText = "MEGA PRESS LCMODEL OUTPUTS";
@@ -645,16 +640,12 @@ async function runPipeline(event) {
             megaSection.appendChild(title);
 
             const row = document.createElement('div');
-            row.style.display = "flex";
-            row.style.gap = "20px";
-            row.style.justifyContent = "center";
-            row.style.flexWrap = "wrap";
+            row.className = "lcmodel-row";
 
             [megaDiff, megaOff].forEach((pdf, i) => {
                 if (pdf) {
                     const box = document.createElement('div');
-                    box.style.flex = "1 1 48%";
-                    box.style.minWidth = "400px";
+                    box.className = "lcmodel-box";
 
                     const label = document.createElement('h3');
                     label.innerText = pdf.startsWith("mega_diff") ? "MEGA DIFF" : "MEGA OFF";
@@ -705,12 +696,7 @@ async function runPipeline(event) {
             if (pdf.startsWith("mega_diff/") || pdf.startsWith("mega_off/")) return;
 
             const wrapper = document.createElement('div');
-            wrapper.style.margin = "2em auto";
-            wrapper.style.maxWidth = "1000px";
-            wrapper.style.padding = "1em";
-            wrapper.style.backgroundColor = "#ffffff";
-            wrapper.style.borderRadius = "8px";
-            wrapper.style.boxShadow = "0 0 15px rgba(0, 0, 0, 0.1)";
+            wrapper.className = "output-card report-section";
             wrapper.style.textAlign = "center";
 
             wrapper.appendChild(createPdfControls(pdf));
@@ -720,12 +706,7 @@ async function runPipeline(event) {
         // Embed metabolite spectra directly under the LCModel outputs (side-by-side)
         if (result.edited_spectra_html || result.no_edit_spectra_html) {
             const spectraSection = document.createElement('div');
-            spectraSection.style.margin = "2em auto";
-            spectraSection.style.maxWidth = "95%";
-            spectraSection.style.backgroundColor = "#ffffff";
-            spectraSection.style.borderRadius = "8px";
-            spectraSection.style.boxShadow = "0 0 15px rgba(0, 0, 0, 0.1)";
-            spectraSection.style.padding = "1em";
+            spectraSection.className = "spectra-section output-card";
 
             const title = document.createElement('h2');
             title.innerText = "METABOLITE SPECTRA";
@@ -735,10 +716,7 @@ async function runPipeline(event) {
             spectraSection.appendChild(title);
 
             const row = document.createElement('div');
-            row.style.display = "flex";
-            row.style.gap = "20px";
-            row.style.justifyContent = "center";
-            row.style.flexWrap = "wrap";
+            row.className = "spectra-row";
 
             const items = [
                 { label: "EDITED", file: result.edited_spectra_html },
@@ -747,8 +725,7 @@ async function runPipeline(event) {
 
             items.forEach(({ label, file }) => {
                 const box = document.createElement('div');
-                box.style.flex = "1 1 48%";
-                box.style.minWidth = "400px";
+                box.className = "spectra-box";
 
                 const h3 = document.createElement('h3');
                 h3.innerText = label;
@@ -820,15 +797,8 @@ async function runPipeline(event) {
             reportContainer.innerHTML = '';
 
             const wrapper = document.createElement('div');
-            Object.assign(wrapper.style, {
-                margin: "2em auto",
-                maxWidth: "1000px",
-                padding: "1em",
-                backgroundColor: "#ffffff",
-                borderRadius: "8px",
-                boxShadow: "0 0 15px rgba(0, 0, 0, 0.1)",
-                textAlign: "center"
-            });
+            wrapper.className = "output-card report-section";
+            wrapper.style.textAlign = "center";
 
             // Embed HTML report if available
             if (result.report && reportFileName) {

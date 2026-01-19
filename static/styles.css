@@ -15,7 +15,11 @@
         --v-blue: #3b528b;
         --v-teal: #21918c;
         --v-green: #5ec962;
+        --v-lightgreen: #5ec9a2;
+
         --v-yellow: #fde725;
+        --v-turquoise: #7edbd6;
+        --v-mauve: #b58cf2;
 
         /* Light theme */
         --bg: #f7fafc;
@@ -51,6 +55,7 @@ html[data-theme="dark"] {
         --brand: #9fb7ff;
         --brand-2: #7de7de;
         --accent: #a6ff9a;
+        --v-mauve: #a97af0;
 
         --focus: rgba(253, 231, 37, 0.20);
         --page-gradient: radial-gradient(1200px 700px at 20% 0%, rgba(33,145,140,0.18), transparent 60%),
@@ -175,6 +180,74 @@ html[data-theme="dark"] .navbar {
 .band-cta {
     min-height: auto;
     background: transparent;
+}
+
+/* Guideline cards (homepage) */
+.guideline-card {
+    position: relative;
+    border: 1px dashed transparent;
+    border-radius: 18px;
+    background: transparent !important;
+    border-color: transparent;
+    backdrop-filter: none;
+    color: var(--v-green);
+    box-shadow: 0 14px 36px rgba(2, 6, 23, 0.08);
+}
+
+.guideline-card * {
+    background: linear-gradient(90deg, var(--v-blue), var(--v-lightgreen));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent !important;
+}
+
+.guideline-card ::marker {
+    color: var(--v-turquoise) !important;
+}
+
+html[data-theme="dark"] .guideline-card {
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.35);
+}
+
+.guideline-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(120deg, var(--v-purple), var(--v-blue), var(--v-teal), var(--v-green), var(--v-yellow));
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+}
+
+html[data-theme="dark"] .guideline-card::before {
+    background: linear-gradient(120deg, rgba(68, 1, 84, 0.7), rgba(59, 82, 139, 0.7), rgba(33, 145, 140, 0.7), rgba(94, 201, 98, 0.7), rgba(253, 231, 37, 0.7));
+}
+
+.guideline-card ol {
+    list-style: none;
+    padding-left: 0;
+    counter-reset: guideline-step;
+}
+
+.guideline-card ol li {
+    counter-increment: guideline-step;
+    position: relative;
+    padding-left: 2rem;
+}
+
+.guideline-card ol li::before {
+    content: counter(guideline-step) ".";
+    position: absolute;
+    left: 0;
+    top: 0;
+    background: linear-gradient(90deg, var(--v-mauve), var(--v-turquoise));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: 600;
 }
 
 .scroll-hint {
@@ -406,6 +479,55 @@ nav ul li {
     border-radius: var(--card-radius);
     box-shadow: var(--shadow);
     backdrop-filter: blur(10px);
+}
+
+/* MRS processing outputs */
+.output-section {
+    width: 100%;
+}
+
+.output-surface {
+    width: 100%;
+    background: var(--bg-elev);
+    border: 1px solid var(--border);
+    border-radius: var(--card-radius);
+    padding: 1.5rem;
+    box-shadow: var(--shadow);
+}
+
+.lcmodel-section,
+.spectra-section,
+.report-section {
+    margin: 1.75rem 0;
+}
+
+.lcmodel-row,
+.spectra-row {
+    display: flex;
+    gap: 20px;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.lcmodel-box,
+.spectra-box {
+    flex: 0 0 50%;
+    min-width: 420px;
+}
+
+.output-card {
+    background: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+    padding: 1rem;
+}
+
+html[data-theme="dark"] .output-card {
+    background: rgba(15, 23, 42, 0.35);
+    border: 1px solid rgba(226, 232, 240, 0.08);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.35);
 }
 
 .contact-card {

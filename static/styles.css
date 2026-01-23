@@ -11,12 +11,11 @@
         --font-display: "Playfair Display", ui-serif, Georgia, serif;
 
         /* Viridis-inspired accents */
-        --v-purple: #440154;
-        --v-blue: #3b528b;
-        --v-teal: #21918c;
+        --v-purple: #9409b6;
+        --v-blue: #4461a8;
+        --v-teal: #28a9a2;
         --v-green: #5ec962;
         --v-lightgreen: #5ec9a2;
-
         --v-yellow: #fde725;
         --v-turquoise: #7edbd6;
         --v-mauve: #b58cf2;
@@ -1042,7 +1041,7 @@ footer a:hover {
     overflow: auto;
     border-radius: 8px;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
-    background-color: #ffffff;
+    background-color: transparent;
     padding: 1em;
     margin-bottom: 2em;
 }
@@ -1051,53 +1050,90 @@ footer a:hover {
 #predictions-table-idh,
 #predictions-table-1p19q {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     margin-bottom: 1em;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    background: transparent;
 }
 
 #predictions-table-idh th,
 #predictions-table-idh td,
 #predictions-table-1p19q th,
 #predictions-table-1p19q td {
-    border: 1px solid #ddd;
+    border: 1px solid var(--border);
     padding: 8px;
     text-align: left;
 }
 
 #predictions-table-idh th,
 #predictions-table-1p19q th {
-    background-color: #223D70;
-    color: white;
-}
-
-#predictions-table-idh tr:nth-child(even),
-#predictions-table-1p19q tr:nth-child(even) {
-    background-color: #f2f2f2;
+    background: transparent;
+    color: #ffffff;
 }
 
 #predictions-table-idh td,
 #predictions-table-1p19q td {
-    color: #333;
+    background: transparent;
+    color: var(--text);
 }
 
-td.final-prediction {
-    background-color: #FFDAB9;
+#predictions-table-idh th.final-prediction-header,
+#predictions-table-1p19q th.final-prediction-header {
+    background-color: rgba(33, 145, 140, 0.08);
+    color: #ffffff;
+}
+
+#predictions-table-idh thead,
+#predictions-table-1p19q thead {
+    background: linear-gradient(90deg, var(--v-purple), var(--v-blue), var(--v-teal));
+}
+
+#predictions-table-idh tr,
+#predictions-table-1p19q tr,
+#predictions-table-idh tr:nth-child(even),
+#predictions-table-1p19q tr:nth-child(even) {
+    background: transparent;
+}
+
+/* #predictions-table-idh td,
+#predictions-table-1p19q td {
+    color: var(--text);
+} */
+
+#predictions-table-idh td.final-prediction,
+#predictions-table-1p19q td.final-prediction {
+    background-color: rgba(253, 231, 37, 0.28);
+    color: var(--text);
 }
 
 #predictions-table-idh tr:nth-child(even) td.final-prediction,
 #predictions-table-1p19q tr:nth-child(even) td.final-prediction {
-    background-color: #f3c8a2;
+    background-color: rgba(253, 231, 37, 0.36);
 }
 
 #predictions-table-idh tr:hover,
 #predictions-table-1p19q tr:hover {
-    background-color: #ddd;
+    background-color: rgba(33, 145, 140, 0.16);
 }
 
 #predictions-table-idh tr:hover td.final-prediction,
 #predictions-table-1p19q tr:hover td.final-prediction {
-    background-color: #F1461F !important;
-    color: #fff;
+    background-color: rgba(33, 145, 140, 0.45) !important;
+    color: #ffffff;
+}
+
+html[data-theme="dark"] #predictions-table-idh td.final-prediction,
+html[data-theme="dark"] #predictions-table-1p19q td.final-prediction {
+    background-color: rgba(253, 231, 37, 0.18);
+    color: var(--text);
+}
+
+html[data-theme="dark"] #predictions-table-idh tr:nth-child(even) td.final-prediction,
+html[data-theme="dark"] #predictions-table-1p19q tr:nth-child(even) td.final-prediction {
+    background-color: rgba(253, 231, 37, 0.26);
 }
 
 .section {
@@ -1122,11 +1158,18 @@ td.final-prediction {
     display: flex;
     flex-direction: column;
     align-items: center;
-    background-color: #ffffff; /* Match predictions div */
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     padding: 2em;
     border-radius: 8px;
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
     box-sizing: border-box;
+}
+
+html[data-theme="dark"] .plot-box {
+    background: rgba(15, 23, 42, 0.45);
+    box-shadow: 0 0 18px rgba(0, 0, 0, 0.35);
 }
 
 .plot-box h3 {

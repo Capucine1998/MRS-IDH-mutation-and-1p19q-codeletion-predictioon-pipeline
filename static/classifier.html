@@ -159,6 +159,10 @@
                                 <i class="bi bi-lightning-charge me-2"></i>
                                 Launch prediction
                             </button>
+                            <div id="classifierWorkingIndicator" class="working-indicator" style="display:none;">
+                                <div class="spinner" aria-hidden="true"></div>
+                                <div id="classifierWorkingText" class="working-text">Working...</div>
+                            </div>
                         </div>
                     </div>
                 </form>
@@ -180,8 +184,8 @@
                 
                 <p id="result"></p>
                 <!-- IDH Status Predictions -->
+                <h2 id="predictions-title-idh" class="text-center" style="display: none;">IDH Mutation Status Predictions</h2>
                 <div id="predictions-section-idh" style="display: none;">
-                    <h2>IDH Mutation Status Predictions</h2>
                     <table id="predictions-table-idh">
                         <thead>
                             <tr id="predictions-header-idh"></tr>
@@ -191,7 +195,7 @@
                 </div>
                 
                 <!-- SHAP Explanation Plots -->
-                <div id="shap-explanation-idh" style="display: none; margin-top: 2em;">
+                <div id="shap-explanation-idh" class="text-center" style="display: none; margin-top: 2em;">
                     <h2> IDH Mutation Status Classifier SHAP Explanation</h2>
 
                     <div class="shap-plot-row">
@@ -223,8 +227,9 @@
 
 
                 <!-- 1p/19q Codeletion Predictions -->
-                <div id="predictions-section-1p19q" style="display: none;">
-                    <h2>1p/19q Codeletion Predictions</h2>
+                <h2 id="predictions-title-1p19q" class="text-center" style="display: none;">1p/19q Codeletion Predictions</h2>
+                <div id="predictions-section-1p19q" style="display: none; margin-top: 2em;">
+                    <!-- <h2>1p/19q Codeletion Predictions</h2> -->
                     <table id="predictions-table-1p19q">
                         <thead>
                             <tr id="predictions-header-1p19q"></tr>
@@ -233,7 +238,7 @@
                     </table>
                 </div>
     
-                <div id="shap-explanation-1p19q" style="display: none; margin-top: 2em;">
+                <div id="shap-explanation-1p19q" class="text-center"  style="display: none; margin-top: 2em;">
                     <h2> 1p/19q Codeletion Classifier SHAP Explanation</h2>
 
                     <div class="shap-plot-row">

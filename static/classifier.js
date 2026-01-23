@@ -1,11 +1,27 @@
 // Main function to handle form submission and run the classifier
 let autoFormData = null;
 
+function setClassifierWorking(isWorking, message) {
+    const indicator = document.getElementById('classifierWorkingIndicator');
+    const text = document.getElementById('classifierWorkingText');
+    const submitBtn = document.querySelector('#classifierForm button[type="submit"]');
+    if (indicator) {
+        indicator.style.display = isWorking ? 'flex' : 'none';
+    }
+    if (text && typeof message === 'string') {
+        text.textContent = message;
+    }
+    if (submitBtn) {
+        submitBtn.disabled = !!isWorking;
+    }
+}
+
 
 async function runPythonScript(event) {
     event.preventDefault();
     const resultBox = document.getElementById('result');
     resultBox.style.display = 'block';
+    setClassifierWorking(true, 'Running classifier...');
 
     // Auto-loaded path: from preprocessing pipeline
     if (window.preloadedFormData) {
@@ -33,6 +49,8 @@ async function runPythonScript(event) {
         } catch (error) {
             resultBox.innerText = 'Request failed: ' + sanitizePath(error.message);
             resultBox.style.color = 'red';
+        } finally {
+            setClassifierWorking(false);
         }
 
         window.preloadedFormData = null;
@@ -63,6 +81,7 @@ async function runPythonScript(event) {
     if (!fileInputCoordOff.files.length || !fileInputPrintOff.files.length) {
         resultBox.innerText = 'Error: At least MEGA_OFF .COORD and .PRINT files must be selected';
         resultBox.style.color = 'red';
+        setClassifierWorking(false);
         return;
     }
 
@@ -75,6 +94,7 @@ async function runPythonScript(event) {
             validateAndAppend(fileInputPrintDiff.files, validExts.print, 'printFilesDiff');
         }
     } catch (error) {
+        setClassifierWorking(false);
         return; // handled above
     }
 
@@ -103,6 +123,8 @@ async function runPythonScript(event) {
     } catch (error) {
         resultBox.innerText = 'Request failed: ' + sanitizePath(error.message);
         resultBox.style.color = 'red';
+    } finally {
+        setClassifierWorking(false);
     }
 }
 
@@ -121,11 +143,11 @@ async function handleSuccessfulResponse(userFolder, usedMegaDiff, resultBox) {
         };
 
         // Display IDH predictions
-        await displayPredictionFile(userFolder, predictions.idh);
+        await displayPredictionFile(userFolder, predictions.idh, true);
         
         // Try to display 1p/19q predictions (may not exist if no IDH mutants)
         try {
-            await displayPredictionFile(userFolder, predictions.p19q);
+            await displayPredictionFile(userFolder, predictions.p19q, false);
         } catch (err) {
             console.warn('1p/19q Prediction CSV missing:', err);
         }
@@ -151,7 +173,7 @@ async function handleSuccessfulResponse(userFolder, usedMegaDiff, resultBox) {
 }
 
 // Display a prediction CSV file
-async function displayPredictionFile(userFolder, filename) {
+async function displayPredictionFile(userFolder, filename, showAlert = true) {
   try {
     // Ensure the userFolder does not already include 'diagnostics'
     const cleanUserFolder = userFolder.replace(/\/diagnostics\/?$/, '');
@@ -170,10 +192,13 @@ async function displayPredictionFile(userFolder, filename) {
     const csvText = await response.text();
     displayPredictions(csvText, filename, userFolder);
 
-  } catch (error) {
-    console.error('Error:', error);
-    alert(`Failed to load predictions: ${error.message}`);
-  }
+    } catch (error) {
+        console.error('Error:', error);
+        if (showAlert) {
+            alert(`Failed to load predictions: ${error.message}`);
+        }
+        throw error;
+    }
 }
 
 
@@ -359,6 +384,10 @@ function handleErrorResponse(result, resultBox) {
     cleanupUserFolder(result.user_folder);
     document.getElementById('predictions-section-idh').style.display = 'none';
     document.getElementById('predictions-section-1p19q').style.display = 'none';
+    const idhTitle = document.getElementById('predictions-title-idh');
+    const codeletionTitle = document.getElementById('predictions-title-1p19q');
+    if (idhTitle) idhTitle.style.display = 'none';    
+    if (codeletionTitle) codeletionTitle.style.display = 'none';
 }
 
 // Display predictions in a table
@@ -391,7 +420,7 @@ function displayPredictions(csvText, filename, userFolder) {
         const th = document.createElement('th');
         th.textContent = header;
         if (finalPredHeader && header === finalPredHeader) {
-            th.style.backgroundColor = '#F1461F';
+            th.classList.add('final-prediction-header');
         }
         headerRow.appendChild(th);
     });
@@ -419,6 +448,13 @@ function displayPredictions(csvText, filename, userFolder) {
     
     // Show the section
     section.style.display = 'block';
+    if (!is1p19q) {
+        const idhTitle = document.getElementById('predictions-title-idh');
+        if (idhTitle) idhTitle.style.display = 'block';
+    } else {
+        const codeletionTitle = document.getElementById('predictions-title-1p19q');
+        if (codeletionTitle) codeletionTitle.style.display = 'block';
+    }
     
     // Check IDH status for second classifier
     if (!is1p19q) {
@@ -631,11 +667,16 @@ async function tryDisplayShapPlot(containerId, imgId, btnId, paths) {
   const container = document.getElementById(containerId);
   const img = document.getElementById(imgId);
   const btn = document.getElementById(btnId);
+    const plotBox = img ? img.closest('.plot-box') : null;
 
   if (!container || !img || !btn) {
     console.error(`Missing elements for SHAP plot: ${containerId}, ${imgId}, ${btnId}`);
     return;
   }
+
+    if (plotBox) {
+        plotBox.style.display = 'none';
+    }
 
   // Try GET requests (more reliable than HEAD) and log status
   for (const plotUrl of paths) {
@@ -650,7 +691,10 @@ async function tryDisplayShapPlot(containerId, imgId, btnId, paths) {
         img.style.display = 'block';
         btn.style.display = 'inline-block';
         btn.onclick = () => window.open(plotUrl, '_blank');
-        container.style.display = 'block';
+                if (plotBox) {
+                    plotBox.style.display = '';
+                }
+                container.style.display = 'block';
         return;
       }
     } catch (e) {
@@ -662,6 +706,9 @@ async function tryDisplayShapPlot(containerId, imgId, btnId, paths) {
     img.src = '';
     img.style.display = 'none';
     btn.style.display = 'none';
+    if (plotBox) {
+        plotBox.style.display = 'none';
+    }
     // IMPORTANT: don't overwrite container HTML; it would remove the other plot elements.
 }
 
@@ -890,6 +937,49 @@ function cleanupUserFolder(userFolder) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
+    setClassifierWorking(false);
+    const form = document.getElementById('classifierForm');
+    if (form) {
+        form.reset();
+    }
+
+    // Force-clear file inputs (browser may restore them on refresh).
+    ['fileInputCoordOff', 'fileInputPrintOff', 'fileInputCoordDiff', 'fileInputPrintDiff']
+        .forEach((id) => {
+            const input = document.getElementById(id);
+            if (input) {
+                input.value = '';
+            }
+        });
+
+    const resultBox = document.getElementById('result');
+    if (resultBox) {
+        resultBox.textContent = '';
+        resultBox.style.color = '';
+    }
+
+    const hideIds = [
+        'predictions-section-idh',
+        'predictions-section-1p19q',
+        'predictions-title-idh',
+        'predictions-title-1p19q',
+        'shap-explanation-idh',
+        'shap-explanation-1p19q',
+        'sd-container',
+        'analysis-container'
+    ];
+    hideIds.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) {
+            el.style.display = 'none';
+        }
+    });
+
+    const lcmodelList = document.getElementById('lcmodel-file-list');
+    if (lcmodelList) {
+        lcmodelList.innerHTML = '';
+    }
+
     const urlParams = new URLSearchParams(window.location.search);
     const lcmodelFilesRaw = urlParams.get('lcmodel_files');
     let lcmodelFiles = [];

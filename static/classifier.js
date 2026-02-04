@@ -25,7 +25,7 @@ async function runPythonScript(event) {
 
     // Auto-loaded path: from preprocessing pipeline
     if (window.preloadedFormData) {
-        resultBox.innerText = 'Processing (auto-imported files)...';
+        resultBox.innerText = '';
         resultBox.style.color = 'black';
 
         try {
@@ -93,19 +93,25 @@ async function runPythonScript(event) {
             validateAndAppend(fileInputCoordDiff.files, validExts.coord, 'coordFilesDiff');
             validateAndAppend(fileInputPrintDiff.files, validExts.print, 'printFilesDiff');
         }
-    } catch (error) {
-        setClassifierWorking(false);
-        return; // handled above
-    }
+        const csvButton = document.createElement('button');
+        csvButton.textContent = 'Download CSV';
+        csvButton.className = 'btn-download-utility';
+        csvButton.onclick = () => downloadFile(filename, content, 'text/csv');
+        const xlsxButton = document.createElement('button');
+        xlsxButton.textContent = 'Download XLSX';
+        xlsxButton.className = 'btn-download-utility';
+        xlsxButton.onclick = () => downloadFile(
+            filename.replace('.csv', '.xlsx'), 
+            content, 
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        );
 
-    try {
-        //resultBox.innerText = 'Processing...';
-        resultBox.style.color = 'black';
-
+        // Actual classifier request
         const response = await fetch('/run-classifier', {
             method: 'POST',
             body: formData
         });
+
 
         const result = await response.json();
         const userFolder = result.user_folder?.replace(/^users\//, '') || '';
@@ -221,10 +227,10 @@ async function displaySdPlots(userFolder) {
     urls.forEach((url, i) => {
       const plotDiv = document.createElement('div');
       plotDiv.className = 'plot-box';
-      plotDiv.innerHTML = `
-        <iframe src="${url}" class="plot-frame" loading="lazy"></iframe>
-        <button id="download-sd-button-${i}">Download HTML</button>
-      `;
+            plotDiv.innerHTML = `
+                <iframe src="${url}" class="plot-frame" loading="lazy"></iframe>
+                <button id="download-sd-button-${i}" class="btn-download-utility">Download HTML</button>
+            `;
       container.appendChild(plotDiv);
 
       document.getElementById(`download-sd-button-${i}`).onclick = async () => {
@@ -303,7 +309,7 @@ async function displayAnalysisPlots(userFolder) {
             plotDiv.className = 'plot-box';
             plotDiv.innerHTML = `
             <iframe src="${url}" class="plot-frame" loading="lazy"></iframe>
-            <button id="download-analysis-button-${i}-${j}">Download HTML</button>
+            <button id="download-analysis-button-${i}-${j}" class="btn-download-utility">Download HTML</button>
             `;
             container.appendChild(plotDiv);
 
@@ -491,10 +497,12 @@ function addDownloadButtons(section, content, filename) {
     
     const csvButton = document.createElement('button');
     csvButton.textContent = 'Download CSV';
+    csvButton.className = 'btn-download-utility';
     csvButton.onclick = () => downloadFile(filename, content, 'text/csv');
     
     const xlsxButton = document.createElement('button');
     xlsxButton.textContent = 'Download XLSX';
+    xlsxButton.className = 'btn-download-utility';
     xlsxButton.onclick = () => downloadFile(
         filename.replace('.csv', '.xlsx'), 
         content, 
@@ -576,9 +584,11 @@ function addDownloadButtons(section, content, filename) {
   downloadDiv.className = 'download-buttons';
   const csvButton = document.createElement('button');
   csvButton.textContent = 'Download CSV';
+        csvButton.className = 'btn-download-utility';
   csvButton.onclick = () => downloadFile(filename, content, 'text/csv');
   const xlsxButton = document.createElement('button');
   xlsxButton.textContent = 'Download XLSX';
+        xlsxButton.className = 'btn-download-utility';
   xlsxButton.onclick = () => convertCsvToExcelAndDownload(content, filename);
   downloadDiv.appendChild(csvButton);
   downloadDiv.appendChild(xlsxButton);
@@ -599,8 +609,20 @@ document.addEventListener('DOMContentLoaded', async () => {
     const userFolder = params.get("user_folder");
     const lcmodelParam = params.get("lcmodel_files");
 
-    if (userFolder && lcmodelParam) {
+    if (lcmodelParam) {
         try {
+            const helper = document.getElementById('lcmodel-helper-message');
+            if (helper) {
+                helper.innerText = 'Go take your LCModel files and upload them here..';
+                helper.style.display = 'block';
+            }
+
+            const resultBox = document.getElementById('result');
+            if (resultBox) {
+                resultBox.style.display = 'block';
+                resultBox.style.color = 'black';
+                resultBox.innerText = '';
+            }
             const lcmodelFiles = JSON.parse(decodeURIComponent(lcmodelParam));
             const coordOff = lcmodelFiles.filter(f => f.includes("mega_off") && f.endsWith(".COORD"));
             const printOff = lcmodelFiles.filter(f => f.includes("mega_off") && f.endsWith(".PRINT"));
@@ -609,7 +631,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const urlToFile = async (path) => {
                 const filename = path.split('/').pop();
-                const url = `/users/${userFolder}/${path}`;
+                const url = `/lcmodel-files/${path}`;
                 const response = await fetch(url);
                 const blob = await response.blob();
                 return new File([blob], filename, { type: 'text/plain' });
@@ -621,7 +643,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             for (const f of coordDiff) autoFormData.append("coordFilesDiff", await urlToFile(f));
             for (const f of printDiff) autoFormData.append("printFilesDiff", await urlToFile(f));
 
-            autoFormData.append("user_folder", userFolder);
+            if (userFolder) {
+                autoFormData.append("user_folder", userFolder);
+            }
+            // Hook into the existing auto-run path
+            window.preloadedFormData = autoFormData;
 
             // Now trigger classifier
             document.getElementById('auto-trigger-classifier')?.click();
@@ -689,6 +715,7 @@ async function tryDisplayShapPlot(containerId, imgId, btnId, paths) {
         const objectUrl = URL.createObjectURL(blob);
         img.src = objectUrl;
         img.style.display = 'block';
+        btn.classList.add('btn-download-utility');
         btn.style.display = 'inline-block';
         btn.onclick = () => window.open(plotUrl, '_blank');
                 if (plotBox) {
@@ -897,6 +924,7 @@ async function displaySecondPrediction(csvPath) {
     // Add download button
     const downloadBtn = document.createElement('button');
     downloadBtn.textContent = 'Download Results';
+    downloadBtn.className = 'btn-download-utility';
     downloadBtn.onclick = () => {
       const blob = new Blob([csvText], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
@@ -991,6 +1019,12 @@ window.addEventListener('DOMContentLoaded', () => {
         }
     }
     console.log("LCModel files received:", lcmodelFiles);
+
+    const helper = document.getElementById('lcmodel-helper-message');
+    if (helper && lcmodelFiles.length > 0) {
+        helper.innerText = 'Go take your LCModel files and upload them here..';
+        helper.style.display = 'block';
+    }
 
     // Example: automatically populate file selection UI
     const fileListContainer = document.getElementById('lcmodel-file-list');

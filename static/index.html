@@ -25,7 +25,7 @@
         <div class="container-xl">
             <a class="navbar-brand d-flex align-items-center gap-2" href="/static/index.html">
                 <span class="brand-logo brand-logo-mask" aria-label="Paris Brain Institute"></span>
-                <img class="brand-logo-img" src="/static/img/paris_institute_of_brain_logo.png" alt="Paris Brain Institute" />
+                <img class="brand-logo-img" src="/static/img/ICM_main.png" alt="Paris Brain Institute" />
             </a>
 
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
@@ -57,21 +57,11 @@
                 <div class="row">
                     <div class="col-12 col-xl-7">
                         <p class="text-uppercase fw-semibold mb-2" style="letter-spacing:.12em; color: var(--muted);">Research prototype</p>
-                        <h1 class="hero-title hero-title-arial mb-3">Magnetic Resonance Spectroscopy tool for MEGA‑PRESS processing and molecular status prediction for gliomas</h1>
+                        <h1 class="hero-title hero-title-arial mb-3">Magnetic Resonance Spectroscopy tool for edited preprocessing and molecular status prediction for gliomas</h1>
                         <p class="hero-subtitle mb-4">
                             Automatic MRS preprocessing and diagnostic support (currently adapted for gliomas), designed to democratize spectroscopy analysis for broad research and molecular characterization in complex neuropathologies.
                         </p>
 
-                         <!-- <div class="d-flex flex-wrap gap-2">
-                            <a class="btn btn-viridis btn-lg" href="/static/mrs-processing.html">
-                                <i class="bi bi-rocket-takeoff me-2"></i>
-                                Run processing
-                            </a>
-                            <a class="btn btn-outline-viridis btn-lg" href="/static/classifier.html">
-                                <i class="bi bi-activity me-2"></i>
-                                Open classifier
-                            </a>
-                        </div> -->
 
                         <div class="mt-3 small" style="color: var(--muted);">
                             <i class="bi bi-exclamation-triangle me-1"></i>
@@ -89,7 +79,7 @@
                         <div class="surface p-4 p-lg-5 guideline-card">
                             <h2 class="h5 mb-3">At a glance</h2>
                             <ul class="mb-0" style="color: var(--muted);">
-                                <li class="mb-2">MEGA‑PRESS <strong>Processing</strong> with quality checks</li>
+                                <li class="mb-2">Edited <strong>Processing</strong> with quality checks</li>
                                 <li class="mb-2">Reports saved as HTML + text-only PNG</li>
                                 <li><strong>Classifier</strong> for IDH & 1p/19q (from LCModel outputs)</li>
                             </ul>
@@ -107,7 +97,7 @@
                         <div class="surface p-4 p-lg-5 guideline-card">
                             <h2 class="h4 mb-3">Quick start</h2>
                             <ol class="mb-0" style="color: var(--muted);">
-                                <li class="mb-2" data-feature="processing">Open <strong>Processing</strong> and upload your anonymized MEGA-PRESS .dcm files.</li>
+                                <li class="mb-2" data-feature="processing">Open <strong>Processing</strong> and upload your anonymized edited .dcm files.</li>
                                 <li class="mb-2" data-feature="processing">Get your quantified processed spectra from LCModel.</li>
                                 <li data-feature="classifier">Run <strong>Classifier</strong> using LCModel outputs.</li>
                             </ol>
@@ -127,7 +117,7 @@
                                 <div><img class="feature-icon" src="/static/img/spectra.svg" alt="Spectra icon"></div>
                                 <div>
                                     <h2 class="h4 mb-2">Processing pipeline</h2>
-                                    <p class="mb-3" style="color: var(--muted);">MEGA‑PRESS preprocessing with quality checks and downloadable reports.</p>
+                                    <p class="mb-3" style="color: var(--muted);">PRESS/STEAM/MEGA‑PRESS (TE=68ms) preprocessing with quality checks and downloadable reports.</p>
                                         <a class="btn btn-viridis-start btn-lg" href="/static/mrs-processing.html">Run processing</a>
                                 </div>
                             </div>
@@ -139,7 +129,7 @@
                                 <div><span class="feature-icon-mask feature-icon-end" aria-hidden="true"></span></div>
                                 <div>
                                     <h2 class="h4 mb-2">IDH & 1p/19q classifier</h2>
-                                    <p class="mb-3" style="color: var(--muted);">Upload LCModel outputs (.COORD/.PRINT) and view predictions + SHAP.</p>
+                                    <p class="mb-3" style="color: var(--muted);">Upload LCModel outputs (.COORD/.PRINT) and view predictions + SHAP explanations.</p>
                                     <div class="d-flex justify-content-center">
                                         <a class="btn btn-viridis-end btn-lg" href="/static/classifier.html">Open classifier</a>
                                     </div>
@@ -166,6 +156,37 @@
                 <div class="row g-3 justify-content-center collab-row">
                     <div class="col-12 col-sm-6 col-md-4 col-xl-3 collab-col">
                         <div class="collab-tile">
+                            <a class="collab-link" href="https://www.aulss2.veneto.it/" target="_blank" rel="noopener noreferrer">
+                                <span class="collab-logo collab-logo-mask collab-logo-treviso" role="img" aria-label="Treviso"></span>
+                                <img class="collab-logo-img" src="/static/img/Treviso_logo.svg" alt="Treviso">
+                                <span class="collab-name">AULSS 2 Marca Trevigiana</span>
+                            </a>
+                        </div>
+                    </div>
+
+  
+                    <div class="col-12 col-sm-6 col-md-4 col-xl-3 collab-col">
+                        <div class="collab-tile">
+                            <a class="collab-link" href="https://med.umn.edu/cmrr/" target="_blank" rel="noopener noreferrer">
+                                <span class="collab-logo collab-logo-mask collab-logo-cmrr" role="img" aria-label="CMRR"></span>
+                                <img class="collab-logo-img" src="/static/img/Minnesota_logo.svg" alt="CMRR">
+                                <span class="collab-name">Center for Magnetic Resonance Research (CMRR)</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-md-4 col-xl-3 collab-col">
+                        <div class="collab-tile">
+                            <a class="collab-link" href="https://www.ottawahospital.on.ca/" target="_blank" rel="noopener noreferrer">
+                                <span class="collab-logo collab-logo-mask collab-logo-ottawa" role="img" aria-label="Ottawa Hospital"></span>
+                                <img class="collab-logo-img" src="/static/img/Ottawa_logo.svg" alt="Ottawa Hospital">
+                                <span class="collab-name">The Ottawa Hospital</span>
+                            </a>
+                        </div>
+                    </div>
+
+                    <div class="col-12 col-sm-6 col-md-4 col-xl-3 collab-col">
+                        <div class="collab-tile">
                             <a class="collab-link" href="https://institutducerveau.org/" target="_blank" rel="noopener noreferrer">
                                 <span class="collab-logo collab-logo-mask collab-logo-icm" role="img" aria-label="ICM"></span>
                                 <img class="collab-logo-img" src="/static/img/ICM_logo.svg" alt="ICM">
@@ -173,29 +194,12 @@
                             </a>
                         </div>
                     </div>
-                    <div class="col-12 col-sm-6 col-md-4 col-xl-3 collab-col">
-                        <div class="collab-tile">
-                            <a class="collab-link" href="https://www.ottawahospital.on.ca/" target="_blank" rel="noopener noreferrer">
-                                <span class="collab-logo collab-logo-mask collab-logo-ottawa" role="img" aria-label="Ottawa Hospital"></span>
-                                <img class="collab-logo-img" src="/static/img/ottawa_logo.svg" alt="Ottawa Hospital">
-                                <span class="collab-name">The Ottawa Hospital</span>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="col-12 col-sm-6 col-md-4 col-xl-3 collab-col">
-                        <div class="collab-tile">
-                            <a class="collab-link" href="https://www.aulss2.veneto.it/" target="_blank" rel="noopener noreferrer">
-                                <span class="collab-logo collab-logo-mask collab-logo-treviso" role="img" aria-label="Treviso"></span>
-                                <img class="collab-logo-img" src="/static/img/treviso_logo.svg" alt="Treviso">
-                                <span class="collab-name">AULSS 2 Marca Trevigiana</span>
-                            </a>
-                        </div>
-                    </div>
+           
                     <div class="col-12 col-sm-6 col-md-4 col-xl-3 collab-col">
                         <div class="collab-tile">
                             <a class="collab-link" href="https://pitiesalpetriere.aphp.fr/" target="_blank" rel="noopener noreferrer">
                                 <span class="collab-logo collab-logo-mask collab-logo-salpetriere" role="img" aria-label="Salpêtrière"></span>
-                                <img class="collab-logo-img" src="/static/img/salpetriere_logo.svg" alt="Salpêtrière">
+                                <img class="collab-logo-img" src="/static/img/Salpetriere_logo.svg" alt="Salpêtrière">
                                 <span class="collab-name">Pitié-Salpêtrière (AP-HP)</span>
                             </a>
                         </div>
@@ -221,7 +225,7 @@
                         <div class="col-lg-8">
                             <h2 class="h4 mb-2">Interested in collaborating on a multicentric spectroscopy study?</h2>
                             <p class="mb-0" style="color: var(--muted);">
-                                We welcome clinicians, medical doctors, and researchers. If you have MEGA‑PRESS MRS data or want to contribute to multicenter validation, reach out.
+                                We welcome clinicians, medical doctors, and researchers. If you have MRS data or want to contribute to multicenter validation, reach out.
                             </p>
                         </div>
                         <div class="col-lg-4 d-flex justify-content-lg-end">

@@ -136,6 +136,7 @@
                     </ul>
                 </div>
 
+                <div id="lcmodel-helper-message" style="display:none; margin: 0 0 12px 0; color: var(--text);"></div>
                 <form id="classifierForm" onsubmit="runPythonScript(event)" class="surface p-4" data-aos="fade-up" data-aos-delay="100">
                     <div class="row g-3">
                         <div class="col-md-6">
@@ -202,12 +203,12 @@
                         <div class="plot-box">
                             <h3>SHAP Bar Plot (tCho scaled dataset)</h3>
                             <img id="shap_IDH_bar-image_tcho" alt="IDH SHAP Bar (tCho)" class="plot-img" style="display: none;">
-                            <button id="download-shap_IDH_bar-button_tcho" style="display: none;">Download</button>
+                            <button id="download-shap_IDH_bar-button_tcho" class="btn-download-utility" style="display: none;">Download</button>
                         </div>
                         <div class="plot-box">
                             <h3>SHAP Beeswarm Plot (tCho scaled dataset)</h3>
                             <img id="shap_IDH_beeswarm-image_tcho" alt="IDH SHAP Beeswarm (tCho)" class="plot-img" style="display: none;">
-                            <button id="download-shap_IDH_beeswarm-button_tcho" style="display: none;">Download</button>
+                            <button id="download-shap_IDH_beeswarm-button_tcho" class="btn-download-utility" style="display: none;">Download</button>
                         </div>
                     </div>
 
@@ -215,12 +216,12 @@
                         <div class="plot-box">
                             <h3>SHAP Bar Plot (water scaled dataset)</h3>
                             <img id="shap_IDH_bar-image_water" alt="IDH SHAP Bar (water)" class="plot-img" style="display: none;">
-                            <button id="download-shap_IDH_bar-button_water" style="display: none;">Download</button>
+                            <button id="download-shap_IDH_bar-button_water" class="btn-download-utility" style="display: none;">Download</button>
                         </div>
                         <div class="plot-box">
                             <h3>SHAP Beeswarm Plot (water scaled dataset)</h3>
                             <img id="shap_IDH_beeswarm-image_water" alt="IDH SHAP Beeswarm (water)" class="plot-img" style="display: none;">
-                            <button id="download-shap_IDH_beeswarm-button_water" style="display: none;">Download</button>
+                            <button id="download-shap_IDH_beeswarm-button_water" class="btn-download-utility" style="display: none;">Download</button>
                         </div>
                     </div>
                 </div>
@@ -245,12 +246,12 @@
                         <div class="plot-box">
                             <h3>SHAP Bar plot (tCho scaled dataset)</h3>
                             <img id="shap_1p19q_bar-image_tcho" alt="1p19q SHAP Bar (tCho)" class="plot-img" style="display: none;">
-                            <button id="download-shap_1p19q_bar-button_tcho" style="display: none;">Download</button>
+                            <button id="download-shap_1p19q_bar-button_tcho" class="btn-download-utility" style="display: none;">Download</button>
                         </div>
                         <div class="plot-box">
                             <h3>SHAP Beeswarm plot (tCho scaled dataset)</h3>
                             <img id="shap_1p19q_beeswarm-image_tcho" alt="1p19q SHAP Beeswarm (tCho)" class="plot-img" style="display: none;">
-                            <button id="download-shap_1p19q_beeswarm-button_tcho" style="display: none;">Download</button>
+                            <button id="download-shap_1p19q_beeswarm-button_tcho" class="btn-download-utility" style="display: none;">Download</button>
                         </div>
                     </div>
 
@@ -258,19 +259,15 @@
                         <div class="plot-box">
                             <h3>SHAP Bar plot (water scaled dataset)</h3>
                             <img id="shap_1p19q_bar-image_water" alt="1p19q SHAP Bar (water)" class="plot-img" style="display: none;">
-                            <button id="download-shap_1p19q_bar-button_water" style="display: none;">Download</button>
+                            <button id="download-shap_1p19q_bar-button_water" class="btn-download-utility" style="display: none;">Download</button>
                         </div>
                         <div class="plot-box">
                             <h3>SHAP Beeswarm plot (water scaled dataset)</h3>
                             <img id="shap_1p19q_beeswarm-image_water" alt="1p19q SHAP Beeswarm (water)" class="plot-img" style="display: none;">
-                            <button id="download-shap_1p19q_beeswarm-button_water" style="display: none;">Download</button>
+                            <button id="download-shap_1p19q_beeswarm-button_water" class="btn-download-utility" style="display: none;">Download</button>
                         </div>
                     </div>
                 </div>
-
-                <ul id="lcmodel-file-list"></ul>
-
-                <!--img src="./img/ROC_algo.png" alt="Model performance metrics" class="metric_img"-->
             </div>
         </div>
     </main>

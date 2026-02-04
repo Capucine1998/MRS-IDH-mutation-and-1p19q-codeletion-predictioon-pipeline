@@ -65,7 +65,8 @@ function resetSelectedUploadsUI() {
 }
 
 function isDcmFileName(name) {
-    return typeof name === 'string' && name.toLowerCase().endsWith('.dcm');
+    const n = String(name || "").toLowerCase();
+    return n.endsWith(".dcm") || n.endsWith(".ima");
 }
 
 function selectionGroupKeyFromRelPath(relPath) {
@@ -609,7 +610,6 @@ async function runPipeline(event) {
         const userFolder = result.user_folder?.replace(/^users\//, '') || '';
 
         console.log("Pipeline output:", result.output);
-        alert("Pipeline ran successfully!");
 
         appendOutputLine('=== Completed ===');
         if (result.output) {
@@ -635,12 +635,16 @@ async function runPipeline(event) {
             const title = document.createElement('h2');
             title.innerText = "MEGA PRESS LCMODEL OUTPUTS";
             title.style.textAlign = "center";
-            title.style.color = "#223D70";
+            title.className = "hero-title hero-title-arial";
             title.style.marginBottom = "1em";
             megaSection.appendChild(title);
 
             const row = document.createElement('div');
             row.className = "lcmodel-row";
+
+            const downloadRow = document.createElement('div');
+            downloadRow.className = "lcmodel-row";
+            downloadRow.style.marginTop = "12px";
 
             [megaDiff, megaOff].forEach((pdf, i) => {
                 if (pdf) {
@@ -648,9 +652,9 @@ async function runPipeline(event) {
                     box.className = "lcmodel-box";
 
                     const label = document.createElement('h3');
-                    label.innerText = pdf.startsWith("mega_diff") ? "MEGA DIFF" : "MEGA OFF";
+                    label.innerText = pdf.startsWith("mega_diff") ? "EDITED" : "NON-EDITED";
+                    label.className = "hero-title hero-title-arial";
                     label.style.textAlign = "center";
-                    label.style.color = "#264766";
                     label.style.marginBottom = "10px";
 
                     box.appendChild(label);
@@ -658,29 +662,23 @@ async function runPipeline(event) {
 
                     row.appendChild(box);
 
-                    // Add associated files list + download all
-                    const downloadBox = document.createElement('div');
-                    downloadBox.style.margin = "10px auto";
-                    downloadBox.style.padding = "10px";
-                    downloadBox.style.backgroundColor = "#E3E9EF";
-                    downloadBox.style.borderRadius = "6px";
-                    downloadBox.style.boxShadow = "0 0 8px rgba(0,0,0,0.05)";
-
+                    const downloadSlot = document.createElement('div');
+                    downloadSlot.className = "lcmodel-box";
 
                     const downloadAll = document.createElement('a');
-                    downloadAll.href = `/download-mega/${pdf.startsWith("mega_diff") ? "mega_diff" : "mega_off"}`;
-                    downloadAll.innerText = "Download all related files (.CONTROL/.COORD/.PDF/.PLOTIN/.PRINT/.PS/.RAW)";
+                    const isDiff = pdf.startsWith("mega_diff");
+                    downloadAll.href = `/download-mega/${isDiff ? "edited" : "non-edited"}`;
+                    downloadAll.innerText = isDiff
+                        ? "Edited — Download related files (.CONTROL/.COORD/.PDF/.PLOTIN/.PRINT/.PS/.RAW)"
+                        : "Non-edited — Download related files (.CONTROL/.COORD/.PDF/.PLOTIN/.PRINT/.PS/.RAW)";
+                    downloadAll.className = "btn-download-utility";
                     downloadAll.style.display = "inline-block";
-                    downloadAll.style.marginTop = "10px";
+                    downloadAll.style.margin = "0 auto";
                     downloadAll.style.padding = "8px 16px";
-                    downloadAll.style.backgroundColor = "#223D70";
-                    downloadAll.style.color = "#fff";
                     downloadAll.style.borderRadius = "5px";
-                    downloadAll.style.textDecoration = "none";
 
-                    downloadBox.appendChild(downloadAll);
-                    box.appendChild(downloadBox);
-
+                    downloadSlot.appendChild(downloadAll);
+                    downloadRow.appendChild(downloadSlot);
                 }
 
  
@@ -688,6 +686,9 @@ async function runPipeline(event) {
 
 
             megaSection.appendChild(row);
+            if (downloadRow.childElementCount > 0) {
+                megaSection.appendChild(downloadRow);
+            }
             pdfContainer.appendChild(megaSection);
         }
 
@@ -711,12 +712,13 @@ async function runPipeline(event) {
             const title = document.createElement('h2');
             title.innerText = "METABOLITE SPECTRA";
             title.style.textAlign = "center";
-            title.style.color = "#223D70";
+            title.className = "hero-title hero-title-arial";
             title.style.marginBottom = "1em";
             spectraSection.appendChild(title);
 
             const row = document.createElement('div');
             row.className = "spectra-row";
+                    
 
             const items = [
                 { label: "EDITED", file: result.edited_spectra_html },
@@ -729,8 +731,8 @@ async function runPipeline(event) {
 
                 const h3 = document.createElement('h3');
                 h3.innerText = label;
+                h3.className = "hero-title hero-title-arial";
                 h3.style.textAlign = "center";
-                h3.style.color = "#264766";
                 h3.style.marginBottom = "10px";
                 box.appendChild(h3);
 
@@ -753,12 +755,11 @@ async function runPipeline(event) {
                 downloadLink.href = `/report/${file}`;
                 downloadLink.download = file;
                 downloadLink.innerText = "Download plot (HTML)";
+                downloadLink.className = "btn-download-utility";
                 Object.assign(downloadLink.style, {
                     display: "inline-block",
                     marginRight: "10px",
                     padding: "8px 16px",
-                    backgroundColor: "#223D70",
-                    color: "#fff",
                     borderRadius: "5px",
                     textDecoration: "none"
                 });
@@ -768,14 +769,12 @@ async function runPipeline(event) {
                 openLink.target = "_blank";
                 openLink.rel = "noopener";
                 openLink.innerText = "Open in new tab";
+                openLink.className = "btn-download-utility";
                 Object.assign(openLink.style, {
                     display: "inline-block",
                     padding: "8px 16px",
-                    backgroundColor: "#E3E9EF",
-                    color: "#223D70",
                     borderRadius: "5px",
-                    textDecoration: "none",
-                    border: "1px solid rgba(34, 61, 112, 0.25)"
+                    textDecoration: "none"
                 });
 
                 controls.appendChild(downloadLink);
@@ -823,12 +822,11 @@ async function runPipeline(event) {
                 htmlDownloadLink.href = `/report/${reportFileName}`;
                 htmlDownloadLink.download = reportFileName;
                 htmlDownloadLink.innerText = "Download Report (HTML)";
+                htmlDownloadLink.className = "btn-download-utility";
                 Object.assign(htmlDownloadLink.style, {
                     display: "inline-block",
                     marginRight: "10px",
                     padding: "8px 16px",
-                    backgroundColor: "#223D70",
-                    color: "#fff",
                     borderRadius: "5px",
                     textDecoration: "none"
                 });
@@ -840,11 +838,10 @@ async function runPipeline(event) {
                 pngDownloadLink.href = `/report/${pngFile}`;
                 pngDownloadLink.download = pngFile;
                 pngDownloadLink.innerText = "Download Report (PNG)";
+                pngDownloadLink.className = "btn-download-utility";
                 Object.assign(pngDownloadLink.style, {
                     display: "inline-block",
                     padding: "8px 16px",
-                    backgroundColor: "#223D70",
-                    color: "#fff",
                     borderRadius: "5px",
                     textDecoration: "none"
                 });
@@ -853,26 +850,6 @@ async function runPipeline(event) {
 
             wrapper.appendChild(downloadArea);
 
-            // List all report files
-            if (result.report_files && result.report_files.length > 0) {
-                const fileList = document.createElement('div');
-                fileList.style.marginTop = "20px";
-
-                result.report_files.forEach(file => {
-                    const link = document.createElement('a');
-                    link.href = `/report/${file}`;
-                    link.innerText = `Download ${file}`;
-                    Object.assign(link.style, {
-                        display: "block",
-                        marginBottom: "6px",
-                        textDecoration: "underline",
-                        color: "#223D70"
-                    });
-                    fileList.appendChild(link);
-                });
-
-                wrapper.appendChild(fileList);
-            }
 
             reportContainer.appendChild(wrapper);
         }
@@ -882,7 +859,7 @@ async function runPipeline(event) {
         
         const proceedBtn = document.createElement('button');
         proceedBtn.innerText = "Proceed to Classifier";
-        proceedBtn.className = "run_button";
+        proceedBtn.className = "btn btn-viridis-end btn-lg";
 
         const lcmodelFiles = (result.lcmodel_files || []);
         const encodedFiles = encodeURIComponent(JSON.stringify(lcmodelFiles));
@@ -891,7 +868,12 @@ async function runPipeline(event) {
             window.location.href = `/static/classifier.html?user_folder=${userFolder}&lcmodel_files=${encodedFiles}`;
         };
 
-        promptContainer.appendChild(proceedBtn);
+        // Center the button in its container
+        const btnWrapper = document.createElement('div');
+        btnWrapper.style.textAlign = 'center';
+        btnWrapper.appendChild(proceedBtn);
+        promptContainer.appendChild(btnWrapper);
+
     }
 
     const formData = new FormData();

@@ -509,6 +509,18 @@ def run_processing():
                                     rel_path = os.path.relpath(f, output_base)
                                     pdf_files.append(rel_path)
 
+                    # Collect LCModel outputs for classifier auto-import (.COORD/.PRINT)
+                    for root, _, files in os.walk(output_base):
+                        for name in files:
+                            if not name.upper().endswith(('.COORD', '.PRINT')):
+                                continue
+                            full_path = os.path.join(root, name)
+                            if _is_new(full_path):
+                                rel_path = os.path.relpath(full_path, output_base)
+                                lcmodel_files.append(rel_path)
+
+                    lcmodel_files = sorted(set(lcmodel_files))
+
                 edited_spectra_html = None
                 no_edit_spectra_html = None
 
@@ -878,7 +890,17 @@ def serve_report(filename):
 
 @app.route('/download-mega/<category>')
 def download_mega_category(category):
-    base_dir = os.path.join("glioma_mrs_preprocessing", "fitting", "LCModel", "output", category)
+    category_map = {
+        'edited': 'mega_diff',
+        'non-edited': 'mega_off',
+        'mega_diff': 'mega_diff',
+        'mega_off': 'mega_off'
+    }
+    mapped = category_map.get(str(category).lower())
+    if not mapped:
+        return abort(404, description="Category folder not found")
+
+    base_dir = os.path.join("glioma_mrs_preprocessing", "fitting", "LCModel", "output", mapped)
 
     if not os.path.exists(base_dir):
         return abort(404, description="Category folder not found")

@@ -127,11 +127,11 @@ html[data-theme="dark"] .navbar {
     width: clamp(260px, 40vw, 520px);
 }
 
-@supports (-webkit-mask-image: url("/static/img/paris_institute_of_brain_logo.png")) or (mask-image: url("/static/img/paris_institute_of_brain_logo.png")) {
+@supports (-webkit-mask-image: url("/static/img/ICM_main.png")) or (mask-image: url("/static/img/ICM_main.png")) {
     .brand-logo-mask {
         display: inline-block;
-        -webkit-mask-image: url("/static/img/paris_institute_of_brain_logo.png");
-        mask-image: url("/static/img/paris_institute_of_brain_logo.png");
+        -webkit-mask-image: url("/static/img/ICM_main.png");
+        mask-image: url("/static/img/ICM_main.png");
     }
     .brand-logo-img {
         display: none;
@@ -318,8 +318,8 @@ html[data-theme="dark"] .scroll-hint {
         var(--v-blue) 22%,
         var(--v-teal) 44%,
         var(--v-green) 66%,
-        var(--v-yellow) 88%,
-        var(--v-yellow) 100%
+        #ffd600 88%,
+        #ffd600 100%
     );
     background-size: var(--collab-gradient-width, 100vw) 100%;
     background-position: var(--collab-gradient-x, 0px) center;
@@ -347,19 +347,25 @@ html[data-theme="dark"] .scroll-hint {
     mask-image: url("/static/img/ICM_logo.svg");
 }
 
+.collab-logo-cmrr {
+    -webkit-mask-image: url("/static/img/Minnesota_logo.svg");
+    mask-image: url("/static/img/Minnesota_logo.svg");
+}
+
+
 .collab-logo-ottawa {
-    -webkit-mask-image: url("/static/img/ottawa_logo.svg");
-    mask-image: url("/static/img/ottawa_logo.svg");
+    -webkit-mask-image: url("/static/img/Ottawa_logo.svg");
+    mask-image: url("/static/img/Ottawa_logo.svg");
 }
 
 .collab-logo-treviso {
-    -webkit-mask-image: url("/static/img/treviso_logo.svg");
-    mask-image: url("/static/img/treviso_logo.svg");
+    -webkit-mask-image: url("/static/img/Treviso_logo.svg");
+    mask-image: url("/static/img/Treviso_logo.svg");
 }
 
 .collab-logo-salpetriere {
-    -webkit-mask-image: url("/static/img/salpetriere_logo.svg");
-    mask-image: url("/static/img/salpetriere_logo.svg");
+    -webkit-mask-image: url("/static/img/Salpetriere_logo.svg");
+    mask-image: url("/static/img/Salpetriere_logo.svg");
 }
 
 .collab-logo-spedali {
@@ -618,6 +624,45 @@ html[data-theme="dark"] .output-card {
 .btn-viridis-start:hover,
 .btn-viridis-end:hover {
     color: #ffffff;
+}
+
+/* Neutral download utility button */
+.btn-download-utility {
+    display: inline-block;
+    border: 1px solid rgba(148, 163, 184, 0.6);
+    color: var(--text);
+    background: transparent;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.btn-download-utility:hover {
+    background: rgba(148, 9, 182, 0.12);
+    border-color: var(--v-purple);
+    color: var(--v-purple);
+}
+
+/* Center prediction table download buttons */
+.download-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+}
+
+html[data-theme="dark"] .btn-download-utility {
+    border-color: rgba(226, 232, 240, 0.35);
+    color: #e5e7eb;
+}
+
+html[data-theme="dark"] .btn-download-utility:hover {
+    background: rgba(253, 231, 37, 0.12);
+    border-color: var(--v-yellow);
+    color: var(--v-yellow);
 }
 
 html[data-theme="dark"] .btn-viridis {
@@ -948,7 +993,7 @@ button[type="submit"]:hover {
 
 #copy-button,
 #download-button,
-button {
+button:not(.btn-download-utility) {
     padding: 0.5em 1em;
     background-color: #223D70;
     color: #ffffff;
@@ -963,6 +1008,33 @@ button {
 #copy-button:hover,
 #download-button:hover {
     background-color: #263238;
+}
+
+/* Ensure utility download buttons stay neutral despite global button styles */
+button.btn-download-utility {
+    padding: 0.5em 1em;
+    font-size: 1em;
+    background: transparent;
+    color: var(--text);
+    border-radius: 4px;
+    border: 1px solid rgba(148, 163, 184, 0.6);
+}
+
+button.btn-download-utility:hover {
+    background: rgba(148, 9, 182, 0.12);
+    border-color: var(--v-purple);
+    color: var(--v-purple);
+}
+
+html[data-theme="dark"] button.btn-download-utility {
+    border-color: rgba(226, 232, 240, 0.35);
+    color: #e5e7eb;
+}
+
+html[data-theme="dark"] button.btn-download-utility:hover {
+    background: rgba(253, 231, 37, 0.12);
+    border-color: var(--v-yellow);
+    color: var(--v-yellow);
 }
 
 /* File input button styles */
@@ -1057,6 +1129,7 @@ footer a:hover {
     border-radius: 8px;
     overflow: hidden;
     background: transparent;
+    text-align: center;
 }
 
 #predictions-table-idh th,
@@ -1065,7 +1138,7 @@ footer a:hover {
 #predictions-table-1p19q td {
     border: 1px solid var(--border);
     padding: 8px;
-    text-align: left;
+    text-align: center;
 }
 
 #predictions-table-idh th,
@@ -1188,7 +1261,7 @@ html[data-theme="dark"] .plot-box {
     border-radius: 6px;
 }
 
-.plot-box button {
+.plot-box button:not(.btn-download-utility) {
     padding: 10px 20px;
     background-color: #223D70;
     color: #fff;
@@ -1199,8 +1272,32 @@ html[data-theme="dark"] .plot-box {
     transition: background-color 0.3s ease;
 }
 
-.plot-box button:hover {
+.plot-box button:not(.btn-download-utility):hover {
     background-color: #263238;
+}
+
+/* Preserve utility download styling inside plot boxes */
+.plot-box button.btn-download-utility {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid rgba(148, 163, 184, 0.6);
+}
+
+.plot-box button.btn-download-utility:hover {
+    background: rgba(148, 9, 182, 0.12);
+    border-color: var(--v-purple);
+    color: var(--v-purple);
+}
+
+html[data-theme="dark"] .plot-box button.btn-download-utility {
+    border-color: rgba(226, 232, 240, 0.35);
+    color: #e5e7eb;
+}
+
+html[data-theme="dark"] .plot-box button.btn-download-utility:hover {
+    background: rgba(253, 231, 37, 0.12);
+    border-color: var(--v-yellow);
+    color: var(--v-yellow);
 }
 
 
@@ -1237,6 +1334,35 @@ html[data-theme="dark"] .plot-box {
     width: 100%;
     height: 100vh;
     padding: 10px 0;
+}
+
+
+#addFidFolderBtn.btn-outline-viridis,
+#addWaterFolderBtn.btn-outline-viridis,
+#addMultiFolderBtn.btn-outline-viridis {
+    background: #1a969267 !important;
+    color: #fff !important;
+    /* border: 1px solid #21A099 !important; */
+    border-radius: 8px !important;
+    -webkit-text-fill-color: currentColor !important;
+    -webkit-background-clip: border-box !important;
+    background-clip: border-box !important;
+}
+
+#monoBtn.btn-outline-viridis,
+#multiBtn.btn-outline-viridis {
+  border-radius: 8px !important;
+}
+
+#monoBtn.btn-outline-viridis:not(.active),
+#multiBtn.btn-outline-viridis:not(.active) {
+  background: rgba(33,145,140,0.06) !important;
+}
+
+#monoBtn.btn-outline-viridis.active,
+#multiBtn.btn-outline-viridis.active {
+  background: rgba(33,145,140,0.18) !important;
+  border-color: rgba(94,201,98,0.8) !important;
 }
 
 

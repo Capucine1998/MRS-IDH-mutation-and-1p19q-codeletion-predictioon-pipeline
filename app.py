@@ -661,7 +661,7 @@ def run_classifier():
         }
 
         file_paths = {}
-        args = ['python3', 'mrs_idh_1p19q_classifier/Classifier.py', user_folder]
+        args = ['python3', 'mrs_idh_1p19q_classifier/IDH_Classifier.py', user_folder]
 
         for field_name, subdir in fields.items():
             uploaded_files = request.files.getlist(field_name)

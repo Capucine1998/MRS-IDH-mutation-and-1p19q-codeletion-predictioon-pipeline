@@ -24,7 +24,7 @@ The IDH MRS Classifier is a comprehensive tool designed for the analysis and cla
   - **utils/**: Utility scripts for data handling and processing.
   - **visualization/**: Scripts for generating plots and visualizations.
 - **mrs_idh_1p19q_classifier/**: Machine learning models and utilities.
-  - **Classifier.py**: Main classification script.
+  - **IDH Classifier.py**: Main IDH classification script.
   - **models/**: Pre-trained model files.
 - **static/**: Frontend assets (HTML, CSS, JavaScript).
 - **uploads/**: Directory for user-uploaded files.
@@ -69,7 +69,7 @@ The IDH MRS Classifier is a comprehensive tool designed for the analysis and cla
   ```
 - **Classification**:
   ```bash
-  python mrs_idh_1p19q_classifier/Classifier.py <input-data>
+  python mrs_idh_1p19q_classifier/IDH_Classifier.py <input-data>
   ```
 
 ## Dependencies
@@ -119,4 +119,4 @@ This project was supported by the Agence Nationale de la Recherche [ANR-20-CE17-
 2. **Can I use this tool without LCModel?**
    - No, LCModel is required for MRS quantification.
 3. **How do I add new machine learning models?**
-   - Add the model file to `mrs_idh_1p19q_classifier/models/` and update `Classifier.py` to include the new model.
+   - Add the model file to `mrs_idh_1p19q_classifier/models/` and update `IDH_Classifier.py` to include the new model.

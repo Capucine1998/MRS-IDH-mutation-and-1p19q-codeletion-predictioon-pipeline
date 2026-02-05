@@ -8,7 +8,6 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import os
 from pathlib import Path
-from pathlib import PurePosixPath
 import glob
 import zipfile
 from io import BytesIO
@@ -19,6 +18,7 @@ import threading
 import queue
 import tarfile
 import json
+
 
 # Flask app setup
 app = Flask(__name__)
@@ -33,7 +33,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins for CORS
 _PROCESSING_JOBS: dict[str, dict] = {}
 _PROCESSING_JOBS_LOCK = threading.Lock()
 
-
+# TODO: degage ca dans un util job
 def _job_emit(job_id: str, message: str, event: str = 'log') -> None:
     """Push a message to a job's SSE queue (and print server-side)."""
     try:
@@ -58,7 +58,7 @@ def _job_emit(job_id: str, message: str, event: str = 'log') -> None:
             'data': msg,
         })
 
-
+# TODO: degage ca dans un util job
 def _job_finish(job_id: str, *, result: dict | None = None, error_message: str | None = None) -> None:
     with _PROCESSING_JOBS_LOCK:
         job = _PROCESSING_JOBS.get(job_id)
@@ -92,7 +92,6 @@ def _job_finish(job_id: str, *, result: dict | None = None, error_message: str |
                     't': time.time(),
                     'data': result,
                 })
-
 
 @app.route('/processing-events/<job_id>')
 def processing_events(job_id: str):
@@ -157,12 +156,14 @@ def processing_events(job_id: str):
         'X-Accel-Buffering': 'no',
     })
 
+# TODO: degage ca dans un util
 def cleanup_old_folders():
     user_folders = [f for f in os.listdir(UPLOAD_FOLDER) if os.path.isdir(os.path.join(UPLOAD_FOLDER, f))]
     if len(user_folders) > USER_FOLDER_LIMIT:
         oldest_folder = min(user_folders, key=lambda f: os.path.getctime(os.path.join(UPLOAD_FOLDER, f)))
         shutil.rmtree(os.path.join(UPLOAD_FOLDER, oldest_folder))
 
+# TODO: degage ca dans un util
 def sanitize_path(path):
     base_path = "/home/mouette/websites/idh-mrs-classifier/"
     return path.replace(base_path, '')
@@ -180,6 +181,8 @@ def run_processing():
     
     dcm_paths = []
     water_dcm_paths = []
+
+    # TODO: Ces variables ne sont pas utilisés
     pdf_files = []
     lcmodel_files = []
     report_files = []
@@ -263,7 +266,7 @@ def run_processing():
         def safe_save_upload(upload, root_dir):
             # upload.filename may include a relative path (e.g. "S14_xxx/IM-0001.dcm" or "S14/IM-0001.dcm")
             raw_name = upload.filename or ''
-            rel = PurePosixPath(raw_name)
+            rel = Path(raw_name)
             # Reject absolute paths and traversal
             if rel.is_absolute() or '..' in rel.parts:
                 raise ValueError(f"Invalid upload filename/path: {raw_name!r}")
@@ -642,9 +645,6 @@ def run_processing():
         # Cleanup happens inside the job's finally block.
         pass
 
-
-
-
 @app.route('/run-classifier', methods=['POST'])
 def run_classifier():
     try:
@@ -825,7 +825,6 @@ def run_second_classifier():
     except Exception as e:
         return jsonify({'error': str(e), 'type': type(e).__name__}), 500
 
-
 @app.route('/download/<path:filename>', methods=['GET'])
 def download_file(filename):
     user_folder = request.args.get('user_folder')
@@ -852,7 +851,6 @@ def list_sd_plots(user_folder):
     urls = [f"/users/{user_folder}/results/mega_press/sd_plots/{html}" for html in htmls]
     return jsonify(urls)
 
-
 @app.route('/')
 def index():
     return send_from_directory('static', 'index.html')
@@ -866,15 +864,6 @@ def serve_user_files(filename):
     base = app.config['UPLOAD_FOLDER'] 
     return send_from_directory(base, filename)
 
-# @app.route('/users/<path:filename>')
-# def serve_user_output_file(filename):
-#     full_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-#     print(f"Serving file: {full_path}")
-#     if not os.path.isfile(full_path):
-#         return "File not found", 404
-#     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-
 @app.route('/pdfs/<path:filename>')
 def serve_pdf(filename):
     # This will serve files from fitting/LCModel/output/ and its subfolders
@@ -886,7 +875,6 @@ def serve_report(filename):
     # This will serve files from fitting/LCModel/output/ and its subfolders
     report_root = os.path.join(os.path.dirname(__file__), 'glioma_mrs_preprocessing/results/report')
     return send_from_directory(report_root, filename)
-
 
 @app.route('/download-mega/<category>')
 def download_mega_category(category):
@@ -965,7 +953,4 @@ def get_plots():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0',debug=True, port=5000)
-
-
-
 

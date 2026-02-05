@@ -19,6 +19,8 @@ import queue
 import tarfile
 import json
 
+from Utils.Paths import cleanup_old_folders, sanitize_path
+
 
 # Flask app setup
 app = Flask(__name__)
@@ -33,7 +35,6 @@ CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins for CORS
 _PROCESSING_JOBS: dict[str, dict] = {}
 _PROCESSING_JOBS_LOCK = threading.Lock()
 
-# TODO: degage ca dans un util job
 def _job_emit(job_id: str, message: str, event: str = 'log') -> None:
     """Push a message to a job's SSE queue (and print server-side)."""
     try:
@@ -58,7 +59,6 @@ def _job_emit(job_id: str, message: str, event: str = 'log') -> None:
             'data': msg,
         })
 
-# TODO: degage ca dans un util job
 def _job_finish(job_id: str, *, result: dict | None = None, error_message: str | None = None) -> None:
     with _PROCESSING_JOBS_LOCK:
         job = _PROCESSING_JOBS.get(job_id)
@@ -156,18 +156,6 @@ def processing_events(job_id: str):
         'X-Accel-Buffering': 'no',
     })
 
-# TODO: degage ca dans un util
-def cleanup_old_folders():
-    user_folders = [f for f in os.listdir(UPLOAD_FOLDER) if os.path.isdir(os.path.join(UPLOAD_FOLDER, f))]
-    if len(user_folders) > USER_FOLDER_LIMIT:
-        oldest_folder = min(user_folders, key=lambda f: os.path.getctime(os.path.join(UPLOAD_FOLDER, f)))
-        shutil.rmtree(os.path.join(UPLOAD_FOLDER, oldest_folder))
-
-# TODO: degage ca dans un util
-def sanitize_path(path):
-    base_path = "/home/mouette/websites/idh-mrs-classifier/"
-    return path.replace(base_path, '')
-
 @app.route('/run-processing', methods=['POST'])
 def run_processing():
     # Initialize all variables at the start
@@ -181,8 +169,6 @@ def run_processing():
     
     dcm_paths = []
     water_dcm_paths = []
-
-    # TODO: Ces variables ne sont pas utilisés
     pdf_files = []
     lcmodel_files = []
     report_files = []
@@ -651,7 +637,7 @@ def run_classifier():
         user_folder = os.path.join(app.config['UPLOAD_FOLDER'], str(uuid.uuid4()))
         os.makedirs(user_folder, exist_ok=True)
 
-        cleanup_old_folders()
+        cleanup_old_folders(app.config['UPLOAD_FOLDER'], app.config['USER_FOLDER_LIMIT'])
 
         fields = {
             'coordFilesOff': 'coord_off',

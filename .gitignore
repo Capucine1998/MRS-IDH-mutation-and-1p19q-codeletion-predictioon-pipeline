@@ -32,3 +32,4 @@ fitting/LCModel/output/*
 python/*
 models/*
 *.log
+debug_files/*

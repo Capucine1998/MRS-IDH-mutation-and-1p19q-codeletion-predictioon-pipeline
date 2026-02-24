@@ -25,8 +25,9 @@ from Utils.Paths import cleanup_old_folders, sanitize_path
 # Flask app setup
 app = Flask(__name__)
 UPLOAD_FOLDER = 'users'
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 USER_FOLDER_LIMIT = 5
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['USER_FOLDER_LIMIT'] = USER_FOLDER_LIMIT
 
 CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins for CORS
 
